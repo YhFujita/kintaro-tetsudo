@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a237e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="きんたろうてつどう" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <title>きんたろうてつどう（金太郎電鉄）〜全国わくわくアトラクション＆名産品めぐり〜</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+  <!-- ==================== タイトル＆プレイヤー設定画面 ==================== -->
+  <div id="title-screen">
+    <div class="title-card">
+      <div class="title-logo-banner">
+        <div id="title-chars-preview" style="display:flex; gap:8px; align-items:center;"></div>
+        <div class="title-logo-text">
+          <h1 data-ruby>🚂 きんたろうてつどう</h1>
+          <div class="subtitle">全国47都道府県 わくわくアトラクション＆名産品めぐり！</div>
+        </div>
+      </div>
+
+      <p style="font-weight:900; font-size:1.05rem; color:#37474f; margin-bottom:10px;" data-ruby>
+        家族や友達と1人〜4人で遊べる！全国のテーマパークや牧場・水族館・おいしい名産品を買って日本一の社長を目指そう！
+      </p>
+
+      <!-- 4人分のプレイヤー・CPU設定 -->
+      <div class="setup-grid">
+        <div class="player-setup-box" data-slot="0">
+          <div style="font-weight:900; color:#d50000;">🔴 1P（赤の列車）</div>
+          <input id="p-name-0" type="text" value="きんたろう社長" maxlength="10" />
+          <select id="p-type-0">
+            <option value="human">👤 にんげん（自分で操作）</option>
+            <option value="cpu_easy">👹 CPU：まめオニ（やさしい）</option>
+            <option value="cpu_normal">👹 CPU：あかオニ（ふつう）</option>
+            <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
+          </select>
+        </div>
+
+        <div class="player-setup-box" data-slot="1">
+          <div style="font-weight:900; color:#1565c0;">🔵 2P（青の列車）</div>
+          <input id="p-name-1" type="text" value="まめオニ社長" maxlength="10" />
+          <select id="p-type-1">
+            <option value="human">👤 にんげん（みんなで対戦）</option>
+            <option value="cpu_easy" selected>👹 CPU：まめオニ（やさしい）</option>
+            <option value="cpu_normal">👹 CPU：あかオニ（ふつう）</option>
+            <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
+          </select>
+        </div>
+
+        <div class="player-setup-box" data-slot="2">
+          <div style="font-weight:900; color:#f57f17;">🟡 3P（黄の列車）</div>
+          <input id="p-name-2" type="text" value="あかオニ社長" maxlength="10" />
+          <select id="p-type-2">
+            <option value="human">👤 にんげん（みんなで対戦）</option>
+            <option value="cpu_easy">👹 CPU：まめオニ（やさしい）</option>
+            <option value="cpu_normal" selected>👹 CPU：あかオニ（ふつう）</option>
+            <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
+            <option value="none">❌ 参加しない</option>
+          </select>
+        </div>
+
+        <div class="player-setup-box" data-slot="3">
+          <div style="font-weight:900; color:#2e7d32;">🟢 4P（緑の列車）</div>
+          <input id="p-name-3" type="text" value="メカオニ社長" maxlength="10" />
+          <select id="p-type-3">
+            <option value="human">👤 にんげん（みんなで対戦）</option>
+            <option value="cpu_easy">👹 CPU：まめオニ（やさしい）</option>
+            <option value="cpu_normal">👹 CPU：あかオニ（ふつう）</option>
+            <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
+            <option value="none" selected>❌ 参加しない</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- プレイ年数設定 -->
+      <div class="setup-options-row">
+        <label for="setup-years">
+          📅 あそぶ年数（3月の決算回数）：
+          <select id="setup-years">
+            <option value="3" selected>3年コース（サクッと楽しい！おすすめ）</option>
+            <option value="5">5年コース（じっくり全国めぐり）</option>
+            <option value="10">10年コース（たっぷり大逆転バトル）</option>
+            <option value="20">20年コース（全国制覇ロングラン！）</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="title-actions">
+        <button id="btn-start-game" class="btn-jumbo btn-start">
+          🚂 出発進行！（あたらしく始める）
+        </button>
+        <button id="btn-continue-game" class="btn-jumbo btn-continue" style="display:none;">
+          📂 つづきから遊ぶ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== メインゲーム画面 ==================== -->
+  <div id="game-container">
+    <!-- 背景：全国インタラクティブSVGマップ -->
+    <div id="map-viewport">
+      <svg id="japan-map-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <!-- 上部領域（ヘッダー＋横並び社長スコアボード） -->
+    <div>
+      <header class="top-hud">
+        <div class="top-left-group">
+          <div class="date-badge">
+            <span id="hud-season-icon" class="season-icon">🌸</span>
+            <span id="hud-date-text">1年目 4月</span>
+          </div>
+
+          <div id="hud-goal-banner" class="goal-banner" title="クリックで目的地を表示">
+            <span id="hud-goal-text">🏁 目的地：決定中</span>
+            <span id="hud-goal-dist" class="goal-dist-pill">あと 0 マス</span>
+          </div>
+        </div>
+
+        <div class="top-Quick-btns">
+          <button id="btn-toggle-speed" class="hud-icon-btn" title="ゲーム速度の切り替え"><span class="btn-icon">⏩</span><span class="btn-text"> 速度: ふつう</span></button>
+          <button id="btn-toggle-ruby" class="hud-icon-btn" title="フリガナ（ルビ）表示の切り替え"><span class="btn-icon">🔤</span><span class="btn-text"> フリガナ: ON</span></button>
+          <button id="btn-toggle-sound" class="hud-icon-btn" title="BGM・効果音の切り替え"><span class="btn-icon">🔊</span><span class="btn-text"> 音: ON</span></button>
+        </div>
+      </header>
+
+      <!-- 4人の社長の横並びコンパクトステータス（画面を広く使える！） -->
+      <div id="players-sidebar" class="players-strip"></div>
+    </div>
+
+    <!-- 右サイド：マップズーム・現在地・目的地・日本全体表示 -->
+    <aside class="map-zoom-controls">
+      <button id="btn-zoom-in" class="hud-icon-btn zoom-btn" title="拡大"><span class="btn-icon">➕</span><span class="btn-text"> 拡大</span></button>
+      <button id="btn-zoom-out" class="hud-icon-btn zoom-btn" title="縮小"><span class="btn-icon">➖</span><span class="btn-text"> 縮小</span></button>
+      <button id="btn-focus-all" class="hud-icon-btn zoom-btn" title="全国全体"><span class="btn-icon">🗾</span><span class="btn-text"> 全国全体</span></button>
+      <button id="btn-focus-me" class="hud-icon-btn zoom-btn" title="現在地へ"><span class="btn-icon">🚂</span><span class="btn-text"> 現在地へ</span></button>
+      <button id="btn-focus-goal" class="hud-icon-btn zoom-btn" title="目的地へ"><span class="btn-icon">🏁</span><span class="btn-text"> 目的地へ</span></button>
+    </aside>
+
+    <!-- 下部：移動操作バー＆コマンド・メッセージ統合ドック -->
+    <footer class="bottom-hud">
+      <!-- 桃鉄風：移動＆分岐選択＆1マス戻るガイド（移動中のみ表示） -->
+      <div id="move-guide-bar" class="hidden">
+        <div class="move-guide-header">
+          <div id="steps-remaining-text" class="steps-remaining-badge"></div>
+          <div class="move-assist-btns">
+            <button id="btn-auto-route" class="btn-auto-route" title="目的地への最短ルートで自動的に進みます">
+              🌟 最短おまかせ<span class="btn-key-hint">（Space）</span>
+            </button>
+            <button id="btn-step-back" class="btn-step-back" title="来た道を1マス戻って歩数を回復します">
+              ↩️ 1マスもどる<span class="btn-key-hint">（BackSpace）</span>
+            </button>
+          </div>
+        </div>
+        <div id="branch-btn-list" class="branch-btn-list"></div>
+      </div>
+
+      <!-- 下部ドック（メッセージ＋コマンドボタン） -->
+      <div class="bottom-dock-row">
+        <div id="message-box">
+          <div id="message-speaker-avatar"></div>
+          <div id="message-content" data-ruby>
+            「きんたろうてつどう」へようこそ！サイコロをふって全国の目的地を目指そう！
+          </div>
+        </div>
+
+        <div id="command-bar" class="hidden">
+          <button id="cmd-btn-dice" class="cmd-btn cmd-dice">🎲 さいころ</button>
+          <button id="cmd-btn-card" class="cmd-btn cmd-card">🃏 カード</button>
+          <button id="cmd-btn-map" class="cmd-btn cmd-map">🗾 全国図鑑</button>
+          <button id="cmd-btn-info" class="cmd-btn cmd-info">📊 会社情報</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== 汎用モーダルオーバーレイ ==================== -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-window" class="modal-window"></div>
+  </div>
+
+  <!-- ==================== スクリプト読み込み ==================== -->
+  <script src="js/ruby.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/data/stations.js"></script>
+  <script src="js/data/cards.js"></script>
+  <script src="js/data/events.js"></script>
+  <script src="js/ui/svgAssets.js"></script>
+  <script src="js/ui/mapRenderer.js"></script>
+  <script src="js/ui/dialogs.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

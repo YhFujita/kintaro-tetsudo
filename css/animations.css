@@ -1,0 +1,153 @@
+/* ==========================================================================
+   きんたろうてつどう - SVGサイコロ・汽車・ルーレット・エフェクトアニメーション
+   ========================================================================== */
+
+/* SVGサイコロが跳ね回りながら回転するアニメーション */
+@keyframes diceRollSpin {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-24px) rotate(110deg) scale(1.12);
+  }
+  50% {
+    transform: translateY(4px) rotate(220deg) scale(0.95);
+  }
+  75% {
+    transform: translateY(-16px) rotate(310deg) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) rotate(360deg) scale(1);
+  }
+}
+
+@keyframes diceLandPop {
+  0% {
+    transform: scale(1.45) rotate(-12deg);
+  }
+  60% {
+    transform: scale(0.92) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.dice-svg.rolling {
+  animation: diceRollSpin 0.34s infinite linear;
+  filter: drop-shadow(0 12px 12px rgba(0, 0, 0, 0.3));
+}
+
+.dice-svg.landed {
+  animation: diceLandPop 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.28));
+}
+
+.dice-stage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 12px;
+  min-height: 150px;
+  background: radial-gradient(circle, #fffde7 0%, #ffe082 100%);
+  border: 4px dashed #ff8f00;
+  border-radius: 20px;
+  margin: 12px 0;
+}
+
+.dice-total-banner {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #d50000;
+  text-shadow: 2px 2px 0 #fff;
+  margin: 8px 0;
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.4); opacity: 0; }
+  80% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* マップ上の目的地キラキラパルス */
+@keyframes goalBeaconPulse {
+  0% {
+    r: 18px;
+    opacity: 0.9;
+  }
+  100% {
+    r: 44px;
+    opacity: 0;
+  }
+}
+
+.goal-pulse-ring {
+  animation: goalBeaconPulse 1.4s infinite ease-out;
+}
+
+/* マップ上の汽車＆キャラクターアイコンパルス（内側グループのみ揺らすことでSVG座標の上書きバグを防止） */
+@keyframes trainChug {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.train-marker-group.is-current-player .train-bob-inner {
+  animation: trainChug 0.55s infinite ease-in-out;
+}
+
+@keyframes playerSpotlightPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.45;
+  }
+}
+
+.player-spotlight-ring {
+  animation: playerSpotlightPulse 1.1s infinite ease-in-out;
+}
+
+/* ルーレットドラム演出 */
+.roulette-box {
+  background: #263238;
+  color: #ffeb3b;
+  border: 5px solid #ffd54f;
+  border-radius: 20px;
+  padding: 20px;
+  font-size: 1.85rem;
+  font-weight: 900;
+  margin: 16px auto;
+  max-width: 520px;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.7);
+}
+
+/* 独占・到着お祝いバナー */
+.celebration-banner {
+  background: linear-gradient(90deg, #ff1744, #ff9100, #ffea00, #00e676, #2979ff, #d500f9);
+  background-size: 300% 300%;
+  animation: rainbowShift 2.5s infinite linear;
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 900;
+  padding: 12px 20px;
+  border-radius: 16px;
+  border: 4px solid #fff;
+  text-shadow: 2px 2px 0 #000;
+  margin-bottom: 12px;
+}
+
+@keyframes rainbowShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

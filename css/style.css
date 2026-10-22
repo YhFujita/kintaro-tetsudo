@@ -1,0 +1,1542 @@
+/* ==========================================================================
+   きんたろうてつどう（金太郎電鉄） Ver 2.0 - 本家桃鉄クオリティUIスタイルシート
+   ・マップ視界を最大化するスリム上下ドック構成
+   ・文字の重なりを排除した高コントラスト・くっきりフォント設計
+   ========================================================================== */
+
+:root {
+  --primary-red: #d50000;
+  --primary-gold: #ffd600;
+  --primary-blue: #1565c0;
+  --primary-green: #2e7d32;
+  --ocean-bg: #29b6f6;
+  --ocean-deep: #0277bd;
+  --border-dark: #1c262b;
+  --text-main: #1a1a1a;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  font-family: "BIZ UDPGothic", "Hiragino Maru Gothic ProN", "Rounded Mplus 1c", "Meiryo", sans-serif;
+  background: var(--ocean-deep);
+  color: var(--text-main);
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+/* フリガナ（ルビ）が行間を崩さない綺麗設計 */
+ruby {
+  ruby-align: center;
+  line-height: 1.55;
+}
+
+ruby rt {
+  font-size: 0.58em;
+  font-weight: 800;
+  color: #b71c1c;
+  letter-spacing: 0;
+}
+
+.modal-header ruby rt,
+.goal-banner ruby rt,
+.btn-start ruby rt,
+.btn-continue ruby rt {
+  color: #fff59d;
+}
+
+body.hide-ruby ruby rt {
+  display: none;
+}
+
+/* ==================== タイトル画面 ==================== */
+#title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: radial-gradient(circle at 50% 30%, #4fc3f7 0%, #0277bd 70%, #01579b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+#title-screen.hidden {
+  display: none;
+}
+
+.title-card {
+  width: 100%;
+  max-width: 940px;
+  background: #fffef9;
+  border: 6px solid #d50000;
+  border-radius: 28px;
+  box-shadow: 0 12px 0 #8e0000, 0 24px 50px rgba(0,0,0,0.45);
+  padding: 22px 26px;
+  text-align: center;
+}
+
+.title-logo-banner {
+  background: linear-gradient(180deg, #ffee58 0%, #fbc02d 100%);
+  border: 4px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 12px 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 5px 0 var(--border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title-logo-text h1 {
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  color: #d50000;
+  text-shadow: 3px 3px 0 #fff, -2px -2px 0 #fff, 0 4px 0 #263238;
+  letter-spacing: 2px;
+}
+
+.title-logo-text .subtitle {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #fff;
+  background: #1565c0;
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 99px;
+  margin-top: 6px;
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.player-setup-box {
+  background: #f5f7fa;
+  border: 3px solid #37474f;
+  border-radius: 16px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-setup-box[data-slot="0"] { border-color: #e53935; background: #ffebee; }
+.player-setup-box[data-slot="1"] { border-color: #1e88e5; background: #e3f2fd; }
+.player-setup-box[data-slot="2"] { border-color: #fbc02d; background: #fffde7; }
+.player-setup-box[data-slot="3"] { border-color: #43a047; background: #e8f5e9; }
+
+.player-setup-box input,
+.player-setup-box select {
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border: 2px solid #455a64;
+  font-size: 0.96rem;
+  font-weight: 900;
+  text-align: center;
+  background: #fff;
+}
+
+.setup-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  background: #fff8e1;
+  border: 3px solid #ffa000;
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+
+.setup-options-row label {
+  font-weight: 900;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setup-options-row select {
+  padding: 6px 12px;
+  font-size: 1rem;
+  font-weight: 900;
+  border-radius: 10px;
+  border: 2px solid var(--border-dark);
+}
+
+.title-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.btn-jumbo {
+  font-size: 1.2rem;
+  font-weight: 900;
+  padding: 11px 30px;
+  border-radius: 99px;
+  border: 4px solid var(--border-dark);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 5px 0 var(--border-dark);
+}
+
+.btn-jumbo:hover {
+  filter: brightness(1.05);
+}
+
+.btn-jumbo:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--border-dark);
+}
+
+.btn-start {
+  background: linear-gradient(180deg, #ff5252 0%, #d50000 100%);
+  color: #fff;
+}
+
+.btn-continue {
+  background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%);
+  color: #fff;
+}
+
+/* ==================== メインゲーム画面レイアウト ==================== */
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+#map-viewport {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 50%, #29b6f6 0%, #0277bd 90%);
+  overflow: hidden;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+#map-viewport:active {
+  cursor: grabbing;
+}
+
+#japan-map-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ==================== 上部ヘッダー（桃鉄風スリムバー） ==================== */
+.top-hud {
+  position: relative;
+  z-index: 20;
+  background: rgba(26, 35, 126, 0.94);
+  border-bottom: 4px solid #ffd600;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  pointer-events: auto;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+.top-left-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.date-badge {
+  background: #fffde7;
+  border: 3px solid var(--border-dark);
+  border-radius: 12px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #212121;
+}
+
+.season-icon {
+  font-size: 1.4rem;
+}
+
+.goal-banner {
+  background: linear-gradient(90deg, #d50000 0%, #ff6d00 100%);
+  color: #fff;
+  border: 3px solid #ffd600;
+  border-radius: 99px;
+  padding: 5px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.goal-banner:hover {
+  transform: scale(1.03);
+}
+
+.goal-banner .goal-dist-pill {
+  background: #ffeb3b;
+  color: #212121;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+/* 4人の社長の横並びコンパクトスコアボード（画面左を塞がない！） */
+.players-strip {
+  position: relative;
+  z-index: 19;
+  display: flex;
+  gap: 8px;
+  padding: 6px 14px;
+  pointer-events: none;
+  flex-wrap: wrap;
+}
+
+.player-card-hud {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.96);
+  border: 3px solid #37474f;
+  border-radius: 14px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 195px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.28);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.player-card-hud.active-turn {
+  background: #fffde7;
+  border-width: 4px;
+  transform: translateY(2px) scale(1.04);
+  box-shadow: 0 0 0 3px #ffd600, 0 6px 14px rgba(0,0,0,0.4);
+}
+
+.player-card-hud .p-info {
+  flex: 1;
+}
+
+.player-card-hud .p-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-weight: 900;
+  font-size: 0.88rem;
+}
+
+.player-card-hud .p-money-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 1px;
+}
+
+.player-card-hud .p-money {
+  font-weight: 900;
+  font-size: 1.02rem;
+  color: #1565c0;
+}
+
+.player-card-hud .p-money.negative {
+  color: #d50000;
+}
+
+.player-card-hud .p-dist {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #455a64;
+}
+
+.binbo-tag {
+  background: #8e24aa;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.binbo-tag.king {
+  background: #d50000;
+  color: #ffeb3b;
+}
+
+.top-Quick-btns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hud-icon-btn {
+  background: #ffffff;
+  border: 2.5px solid var(--border-dark);
+  border-radius: 10px;
+  padding: 5px 11px;
+  font-weight: 900;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--border-dark);
+}
+
+.hud-icon-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border-dark);
+}
+
+/* 右サイド：マップズーム＆視点切り替えツールバー */
+.map-zoom-controls {
+  position: fixed;
+  right: 12px;
+  top: 125px;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+/* ==================== 下部操作ドック（スッキリ1段＋コマンド） ==================== */
+.bottom-hud {
+  position: relative;
+  z-index: 20;
+  padding: 8px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* 本家桃鉄風：移動＆分岐操作パネル */
+#move-guide-bar {
+  pointer-events: auto;
+  background: rgba(28, 38, 43, 0.96);
+  color: #fff;
+  border: 4px solid #ffd600;
+  border-radius: 22px;
+  padding: 10px 18px;
+  max-width: 920px;
+  width: 100%;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#move-guide-bar.hidden {
+  display: none;
+}
+
+.move-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.steps-remaining-badge {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffeb3b;
+}
+
+.move-assist-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-auto-route {
+  background: linear-gradient(180deg, #ffeb3b 0%, #fbc02d 100%);
+  color: #212121;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  padding: 6px 14px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #b28900;
+}
+
+.btn-step-back {
+  background: #546e7a;
+  color: #fff;
+  border: 2.5px solid #cfd8dc;
+  border-radius: 12px;
+  padding: 6px 14px;
+  font-weight: 900;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.btn-step-back:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.branch-btn-list {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.branch-choice-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%);
+  color: #212121;
+  border: 3px solid #1e88e5;
+  border-radius: 14px;
+  padding: 7px 16px;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 0 #0d47a1;
+  transition: transform 0.1s;
+}
+
+.branch-choice-btn:hover {
+  transform: translateY(-2px);
+}
+
+.branch-choice-btn.recommended {
+  background: linear-gradient(180deg, #fffde7 0%, #ffd54f 100%);
+  border-color: #d50000;
+  box-shadow: 0 4px 0 #b71c1c;
+}
+
+.branch-choice-btn .dir-key-badge {
+  background: #263238;
+  color: #ffeb3b;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.branch-choice-btn .dist-hint {
+  font-size: 0.82rem;
+  color: #d50000;
+  background: rgba(255,255,255,0.85);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+/* コマンドバー＋メッセージ統合ドック */
+.bottom-dock-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 1060px;
+  flex-wrap: wrap;
+  pointer-events: auto;
+}
+
+#message-box {
+  flex: 1;
+  min-width: 280px;
+  background: rgba(255, 254, 247, 0.96);
+  border: 4px solid #d50000;
+  border-radius: 18px;
+  padding: 8px 14px;
+  box-shadow: 0 5px 0 #8e0000, 0 8px 20px rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#message-speaker-avatar {
+  flex-shrink: 0;
+}
+
+#message-content {
+  flex: 1;
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.5;
+}
+
+#command-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#command-bar.hidden {
+  display: none;
+}
+
+.cmd-btn {
+  border: 3.5px solid var(--border-dark);
+  border-radius: 16px;
+  padding: 10px 18px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 5px 0 var(--border-dark), 0 8px 16px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+}
+
+.cmd-btn:hover {
+  filter: brightness(1.06);
+}
+
+.cmd-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--border-dark);
+}
+
+.cmd-dice {
+  background: linear-gradient(180deg, #ff5252 0%, #d50000 100%);
+  color: #fff;
+  font-size: 1.25rem;
+  padding: 10px 26px;
+}
+
+.cmd-card {
+  background: linear-gradient(180deg, #ffca28 0%, #ff8f00 100%);
+  color: #212121;
+}
+
+.cmd-map {
+  background: linear-gradient(180deg, #29b6f6 0%, #0288d1 100%);
+  color: #fff;
+}
+
+.cmd-info {
+  background: linear-gradient(180deg, #66bb6a 0%, #2e7d32 100%);
+  color: #fff;
+}
+
+/* ==================== モーダルダイアログ ==================== */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+
+#modal-overlay.hidden {
+  display: none;
+}
+
+.modal-window {
+  background: #fffef9;
+  border: 5px solid var(--border-dark);
+  border-radius: 24px;
+  max-width: 820px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 18px 22px;
+  box-shadow: 0 10px 0 var(--border-dark), 0 20px 50px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.modal-header {
+  background: linear-gradient(90deg, #d50000, #ff6d00);
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 14px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+  border: 3px solid var(--border-dark);
+}
+
+.modal-header.blue {
+  background: linear-gradient(90deg, #1565c0, #00acc1);
+}
+
+.modal-header.purple {
+  background: linear-gradient(90deg, #6a1b9a, #ab47bc);
+}
+
+.modal-header.gold {
+  background: linear-gradient(90deg, #f57f17, #fbc02d);
+  color: #212121;
+}
+
+.prop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+  text-align: left;
+}
+
+.prop-item {
+  background: #f5f7fa;
+  border: 3px solid #cfd8dc;
+  border-radius: 14px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.prop-item.owned-self {
+  background: #fff8e1;
+  border-color: #ffa000;
+}
+
+.prop-item.owned-other {
+  background: #eceff1;
+  opacity: 0.85;
+}
+
+.prop-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prop-desc {
+  font-size: 0.84rem;
+  color: #455a64;
+  margin-top: 2px;
+}
+
+.prop-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 900;
+}
+
+.prop-rate-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 2px solid #2e7d32;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+  text-align: left;
+}
+
+.game-card-item {
+  background: linear-gradient(180deg, #ffffff 0%, #fffde7 100%);
+  border: 3px solid #37474f;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 4px 0 #37474f;
+}
+
+.game-card-item .c-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.game-card-item .c-desc {
+  font-size: 0.84rem;
+  color: #37474f;
+  line-height: 1.55;
+}
+
+.kessan-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.kessan-row {
+  background: #f5f7fa;
+  border: 3px solid var(--border-dark);
+  border-radius: 14px;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.kessan-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-weight: 900;
+}
+
+.kessan-bar-wrap {
+  width: 100%;
+  height: 20px;
+  background: #cfd8dc;
+  border-radius: 99px;
+  overflow: hidden;
+  border: 2px solid var(--border-dark);
+}
+
+.kessan-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: 99px;
+}
+
+/* ==========================================================================
+   モバイル・スマートフォン画面 最適化スタイルシート (Responsive & Touch-Friendly)
+   ========================================================================== */
+
+/* 1. タブレット・大型スマホ画面 (幅900px以下) */
+@media (max-width: 900px) {
+  .top-hud {
+    padding: max(6px, var(--sat)) max(10px, var(--sar)) 6px max(10px, var(--sal));
+    gap: 8px;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .hud-icon-btn {
+    padding: 6px 10px;
+    font-size: 0.95rem;
+  }
+
+  .map-zoom-controls {
+    right: 8px;
+    top: auto;
+    bottom: calc(var(--sab) + 160px);
+    gap: 5px;
+  }
+
+  .map-zoom-controls .hud-icon-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+  }
+
+  .players-strip {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 4px 10px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .players-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .player-card-hud {
+    min-width: 155px;
+    max-width: 175px;
+    flex-shrink: 0;
+    padding: 4px 8px;
+  }
+
+  .bottom-hud {
+    padding: 6px 10px max(10px, var(--sab)) 10px;
+  }
+
+  .bottom-dock-row {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  #message-box {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #command-bar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .cmd-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 0.98rem;
+    justify-content: center;
+  }
+
+  .btn-key-hint {
+    display: none;
+  }
+}
+
+/* 2. スマートフォン標準画面 (幅600px以下) */
+@media (max-width: 600px) {
+  /* タイトル画面 */
+  #title-screen {
+    padding: max(10px, var(--sat)) max(8px, var(--sar)) max(12px, var(--sab)) max(8px, var(--sal));
+    align-items: flex-start;
+  }
+
+  .title-card {
+    padding: 12px 10px;
+    border-width: 4px;
+    border-radius: 20px;
+    box-shadow: 0 6px 0 #8e0000, 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .title-logo-banner {
+    padding: 8px 10px;
+    border-radius: 14px;
+    border-width: 3px;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .title-logo-text h1 {
+    font-size: clamp(1.4rem, 6.2vw, 1.85rem);
+    letter-spacing: 1px;
+  }
+
+  .title-logo-text .subtitle {
+    font-size: 0.78rem;
+    padding: 3px 10px;
+    margin-top: 3px;
+  }
+
+  .title-card > p {
+    font-size: 0.85rem !important;
+    line-height: 1.4;
+    margin-bottom: 8px !important;
+  }
+
+  .setup-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 8px 0;
+  }
+
+  .player-setup-box {
+    padding: 6px 6px;
+    border-width: 2.5px;
+    border-radius: 12px;
+    gap: 4px;
+  }
+
+  .player-setup-box > div:first-child {
+    font-size: 0.8rem;
+  }
+
+  .player-setup-box input,
+  .player-setup-box select {
+    padding: 5px 4px;
+    font-size: 0.82rem;
+    border-radius: 8px;
+  }
+
+  .setup-options-row {
+    padding: 6px 10px;
+    margin: 8px 0;
+    border-radius: 12px;
+  }
+
+  .setup-options-row label {
+    font-size: 0.85rem;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .setup-options-row select {
+    font-size: 0.86rem;
+    padding: 5px 8px;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .title-actions {
+    margin-top: 8px;
+    gap: 8px;
+  }
+
+  .btn-jumbo {
+    font-size: 1.05rem;
+    padding: 10px 18px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* 上部ヘッダー */
+  .top-hud {
+    padding: max(4px, var(--sat)) max(6px, var(--sar)) 4px max(6px, var(--sal));
+    border-bottom-width: 3px;
+    gap: 4px;
+  }
+
+  .top-left-group {
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .date-badge {
+    padding: 2px 7px;
+    font-size: 0.88rem;
+    border-radius: 8px;
+    border-width: 2px;
+    gap: 4px;
+  }
+
+  .season-icon {
+    font-size: 1rem;
+  }
+
+  .goal-banner {
+    padding: 3px 8px;
+    font-size: 0.82rem;
+    border-radius: 12px;
+    border-width: 2px;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  #hud-goal-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 145px;
+  }
+
+  .goal-banner .goal-dist-pill {
+    padding: 1px 6px;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  .top-Quick-btns {
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .hud-icon-btn {
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    border-width: 2px;
+  }
+
+  /* 4人の社長スコアボード（横スワイプリボン） */
+  .players-strip {
+    padding: 3px 6px;
+    gap: 6px;
+  }
+
+  .player-card-hud {
+    min-width: 140px;
+    max-width: 155px;
+    padding: 3px 6px;
+    border-radius: 10px;
+    border-width: 2.5px;
+    gap: 6px;
+  }
+
+  .player-card-hud.active-turn {
+    border-width: 3.5px;
+    transform: scale(1.02);
+  }
+
+  .player-card-hud .p-avatar svg {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .player-card-hud .p-name-row {
+    font-size: 0.76rem;
+  }
+
+  .player-card-hud .p-money {
+    font-size: 0.86rem;
+  }
+
+  .player-card-hud .p-dist {
+    font-size: 0.7rem;
+  }
+
+  .binbo-tag {
+    font-size: 0.62rem;
+    padding: 1px 4px;
+  }
+
+  /* 右サイドズームコントロール */
+  .map-zoom-controls {
+    right: 6px;
+    bottom: calc(var(--sab) + 165px);
+    gap: 4px;
+  }
+
+  .map-zoom-controls .hud-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    border-width: 2.5px;
+  }
+
+  /* 下部ドック */
+  .bottom-hud {
+    padding: 4px 6px max(6px, var(--sab)) 6px;
+    gap: 5px;
+  }
+
+  .bottom-dock-row {
+    gap: 5px;
+  }
+
+  #message-box {
+    padding: 5px 8px;
+    border-radius: 12px;
+    border-width: 3px;
+    gap: 8px;
+  }
+
+  #message-speaker-avatar svg {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  #message-content {
+    font-size: 0.85rem;
+    line-height: 1.38;
+  }
+
+  /* コマンドバー：スマホ縦向きで親指タップしやすい配置 */
+  #command-bar {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr 1fr;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .cmd-btn {
+    padding: 9px 2px;
+    font-size: 0.84rem;
+    border-width: 2.5px;
+    border-radius: 12px;
+    box-shadow: 0 3px 0 var(--border-dark);
+  }
+
+  .cmd-dice {
+    font-size: 0.96rem;
+    padding: 9px 4px;
+  }
+
+  /* 移動ガイドバー */
+  #move-guide-bar {
+    padding: 6px 10px;
+    border-radius: 14px;
+    border-width: 3px;
+    gap: 5px;
+  }
+
+  .steps-remaining-badge {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .move-assist-btns {
+    width: 100%;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .btn-auto-route,
+  .btn-step-back {
+    flex: 1;
+    padding: 7px 4px;
+    font-size: 0.82rem;
+    border-radius: 10px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .branch-btn-list {
+    gap: 5px;
+  }
+
+  .branch-choice-btn {
+    padding: 6px 10px;
+    font-size: 0.86rem;
+    border-radius: 10px;
+    border-width: 2.5px;
+    gap: 5px;
+  }
+
+  .branch-choice-btn .dir-key-badge {
+    font-size: 0.75rem;
+    padding: 1px 5px;
+  }
+
+  .branch-choice-btn .dist-hint {
+    font-size: 0.74rem;
+    padding: 1px 5px;
+  }
+
+  /* モーダルダイアログ */
+  #modal-overlay {
+    padding: max(8px, var(--sat)) max(6px, var(--sar)) max(8px, var(--sab)) max(6px, var(--sal));
+  }
+
+  .modal-window {
+    max-height: 92dvh;
+    padding: 12px 10px;
+    border-radius: 18px;
+    border-width: 4px;
+    box-shadow: 0 6px 0 var(--border-dark), 0 14px 35px rgba(0, 0, 0, 0.45);
+  }
+
+  .modal-header {
+    font-size: 1.1rem;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border-width: 2.5px;
+  }
+
+  .event-modal-body {
+    gap: 10px !important;
+    padding: 6px 2px !important;
+  }
+
+  .event-modal-avatar svg {
+    width: 62px !important;
+    height: 62px !important;
+  }
+
+  .event-modal-desc {
+    min-width: 0 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.55 !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .roulette-modal-top {
+    gap: 8px !important;
+  }
+
+  .roulette-modal-avatar svg {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .prop-list {
+    gap: 6px;
+    margin: 8px 0;
+  }
+
+  .prop-item {
+    padding: 6px 8px;
+    border-radius: 10px;
+    border-width: 2px;
+    gap: 6px;
+  }
+
+  .prop-title {
+    font-size: 0.92rem;
+  }
+
+  .prop-desc {
+    font-size: 0.78rem;
+  }
+
+  .prop-meta {
+    font-size: 0.84rem;
+    gap: 8px;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin: 8px 0;
+  }
+
+  .game-card-item {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border-width: 2.5px;
+  }
+
+  .game-card-item .c-head {
+    font-size: 0.95rem;
+  }
+
+  .game-card-item .c-desc {
+    font-size: 0.8rem;
+  }
+
+  .dice-stage {
+    padding: 12px 8px;
+    min-height: 110px;
+    border-radius: 14px;
+    gap: 8px;
+    margin: 8px 0;
+  }
+
+  .dice-stage svg {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .dice-total-banner {
+    font-size: 1.5rem;
+  }
+
+  .roulette-box {
+    font-size: 1.35rem;
+    padding: 14px 10px;
+    margin: 10px auto;
+    border-radius: 14px;
+  }
+
+  .celebration-banner {
+    font-size: 1.15rem;
+    padding: 8px 12px;
+    border-radius: 12px;
+  }
+
+  .kessan-row {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .kessan-row-top {
+    font-size: 0.86rem;
+  }
+}
+
+/* 3. 極小スマートフォン画面 (幅380px以下、iPhone SE等) */
+@media (max-width: 380px) {
+  #hud-goal-text {
+    max-width: 105px;
+  }
+
+  .setup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #command-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cmd-dice {
+    grid-column: span 2;
+    font-size: 1.05rem;
+    padding: 10px;
+  }
+
+  .player-card-hud {
+    min-width: 130px;
+  }
+}
+
+/* 4. スマートフォン横向き画面 (高さ520px以下 Landscape) */
+@media (max-height: 520px) {
+  #title-screen {
+    padding: 6px;
+    align-items: flex-start;
+  }
+
+  .title-card {
+    padding: 8px 12px;
+  }
+
+  .title-logo-banner {
+    padding: 4px 10px;
+    margin-bottom: 4px;
+  }
+
+  .title-logo-text h1 {
+    font-size: 1.35rem;
+  }
+
+  .title-card > p {
+    display: none;
+  }
+
+  .setup-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin: 4px 0;
+  }
+
+  .player-setup-box {
+    padding: 4px;
+  }
+
+  .player-setup-box input,
+  .player-setup-box select {
+    padding: 3px 2px;
+    font-size: 0.76rem;
+  }
+
+  .setup-options-row {
+    padding: 4px 8px;
+    margin: 4px 0;
+  }
+
+  .btn-jumbo {
+    font-size: 0.95rem;
+    padding: 7px 16px;
+  }
+
+  /* 横画面メインゲームHUD */
+  .top-hud {
+    padding: 2px 8px;
+  }
+
+  .players-strip {
+    padding: 2px 8px;
+  }
+
+  .player-card-hud {
+    padding: 2px 6px;
+    min-width: 130px;
+  }
+
+  .map-zoom-controls {
+    top: 65px;
+    bottom: auto;
+    right: 6px;
+    gap: 3px;
+  }
+
+  .map-zoom-controls .hud-icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.95rem;
+  }
+
+  .bottom-hud {
+    padding: 2px 8px var(--sab) 8px;
+    gap: 3px;
+  }
+
+  .bottom-dock-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #message-box {
+    padding: 3px 8px;
+    max-height: 44px;
+  }
+
+  #message-speaker-avatar svg {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  #message-content {
+    font-size: 0.8rem;
+    line-height: 1.25;
+  }
+
+  #command-bar {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    width: auto;
+  }
+
+  .cmd-btn {
+    padding: 6px 10px;
+    font-size: 0.84rem;
+  }
+
+  .modal-window {
+    max-height: 96dvh;
+    padding: 8px 12px;
+  }
+
+  .modal-header {
+    font-size: 1rem;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+  }
+}

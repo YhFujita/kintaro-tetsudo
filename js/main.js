@@ -562,95 +562,101 @@ window.KT = window.KT || {};
   }
 
   /**
-   * 本家桃鉄クオリティの路線移動システム（Ver 3.0 完全直交グリッド＆なめらか移動アニメーション）
-   * ・すべての線路が100%縦（↑北・↓南）または横（←西・→東）なので、矢印キー（↑↓←→ / WASD）と進行方向が1対1で完全一致！
-   * ・1歩ごとにキャラクター＆汽車が線路の上をスイスイ滑る60fpsアニメーション（animateTrainStep）
-   * ・移動中いつでも（残り0マスになった直後でも！）来た方向の矢印キー（またはBackspace）を押すと1マス戻って歩数が＋1回復！
-   * ・「🌟 最短ルートで一気に進む」を押せば目的地まで自動でスイスイ進行可能
+   * 本家桃鉄クオリティの路線移動システム（Ver 3.5 完全直交グリッド＆タップで直感移動＆全画面マップ表示）
+   * ・移動中は下部ドックを自動退避し、マップ視界を100%確保！
+   * ・マップ上の隣接駅や方向矢印をタップするだけで、1歩ずつスイスイ直感移動
+   * ・残り0マス時は現在地駅のタップ（またはEnter/Space）でピタッと到着確定！
+   * ・直前にいた駅をタップ（またはBackSpace）で1マス戻って歩数が＋1回復
+   * ・「🌟 最短おまかせ」で目的地まで一気に自動移動も可能
    */
   async function moveTrainSteps(player, initialSteps) {
     let remaining = initialSteps;
     const pIdx = state.players.indexOf(player);
     const pathHistory = [player.stationId]; // 歩いた経路スタック（戻ると歩数が＋1回復！）
-    let autoRouteActive = player.isCpu;     // CPUまたは「最短ルートで進む」押下時は自動進行
+    let autoRouteActive = player.isCpu;     // CPUまたは「おまかせ」押下時は自動進行
 
-    while (true) {
-      if (remaining <= 0) {
-        break;
-      }
+    document.body.classList.add('moving-phase');
 
-      const curSt = KT.STATION_MAP.get(player.stationId);
-      if (!curSt) break;
-
-      const prevStationId = pathHistory.length >= 2 ? pathHistory[pathHistory.length - 2] : null;
-      const forwardCandidates = curSt.links.filter(id => id !== prevStationId);
-
-      // 自動ルートモード（CPU または「🌟最短ルートで一気に進む」実行中）
-      if (autoRouteActive) {
-        KT.mapRenderer.setHighlightedBranches([], null, remaining);
-        updateAllUI();
-
-        const pool = forwardCandidates.length > 0 ? forwardCandidates : curSt.links;
-        const nextId = KT.ai.chooseNextBranch(state, player, pool);
-        const fromId = player.stationId;
-
-        KT.audio.SE.step();
-        await KT.mapRenderer.animateTrainStep(pIdx, fromId, nextId, 165);
-
-        pathHistory.push(nextId);
-        player.stationId = nextId;
-        remaining--;
-        checkBinboTransferOnPass(player);
-        updateAllUI();
-        continue;
-      }
-
-      // 人間プレイヤー：1歩ずつ矢印キー（↑↓←→）で狙った方向に進んだり戻ったりできる！
-      const decision = await promptHumanMoveDecision(player, curSt, forwardCandidates, prevStationId, remaining);
-
-      if (decision.type === 'confirm_stop') {
-        break;
-      } else if (decision.type === 'auto_route') {
-        autoRouteActive = true;
-        continue;
-      } else if (decision.type === 'step_back') {
-        if (pathHistory.length >= 2) {
-          const fromId = player.stationId;
-          pathHistory.pop(); // 現在の駅を取り除く
-          const backStId = pathHistory[pathHistory.length - 1];
-
-          KT.audio.SE.cancel();
-          await KT.mapRenderer.animateTrainStep(pIdx, fromId, backStId, 165);
-
-          player.stationId = backStId;
-          remaining++; // 歩数を1回復！
-          updateAllUI();
+    try {
+      while (true) {
+        if (remaining <= 0) {
+          break;
         }
-        continue;
-      } else if (decision.type === 'move_to' && decision.stationId) {
-        const fromId = player.stationId;
-        // もし選んだ先が「直前に来た駅（prevStationId）」なら、1マス戻って歩数＋1回復！
-        if (decision.stationId === prevStationId) {
-          pathHistory.pop();
-          KT.audio.SE.cancel();
-          await KT.mapRenderer.animateTrainStep(pIdx, fromId, prevStationId, 165);
-          player.stationId = prevStationId;
-          remaining++;
-        } else {
-          pathHistory.push(decision.stationId);
+
+        const curSt = KT.STATION_MAP.get(player.stationId);
+        if (!curSt) break;
+
+        const prevStationId = pathHistory.length >= 2 ? pathHistory[pathHistory.length - 2] : null;
+        const forwardCandidates = curSt.links.filter(id => id !== prevStationId);
+
+        // 自動ルートモード（CPU または「🌟おまかせ」実行中）
+        if (autoRouteActive) {
+          KT.mapRenderer.setHighlightedBranches([], null, remaining);
+          updateAllUI();
+
+          const pool = forwardCandidates.length > 0 ? forwardCandidates : curSt.links;
+          const nextId = KT.ai.chooseNextBranch(state, player, pool);
+          const fromId = player.stationId;
+
           KT.audio.SE.step();
-          await KT.mapRenderer.animateTrainStep(pIdx, fromId, decision.stationId, 175);
-          player.stationId = decision.stationId;
+          await KT.mapRenderer.animateTrainStep(pIdx, fromId, nextId, 165);
+
+          pathHistory.push(nextId);
+          player.stationId = nextId;
           remaining--;
           checkBinboTransferOnPass(player);
+          updateAllUI();
+          continue;
         }
-        updateAllUI();
-      }
-    }
 
-    KT.mapRenderer.setHighlightedBranches([], null, null);
-    const guideBar = document.getElementById('move-guide-bar');
-    if (guideBar) guideBar.classList.add('hidden');
+        // 人間プレイヤー：マップ上の駅タップや矢印キーで直感移動！
+        const decision = await promptHumanMoveDecision(player, curSt, forwardCandidates, prevStationId, remaining);
+
+        if (decision.type === 'confirm_stop') {
+          break;
+        } else if (decision.type === 'auto_route') {
+          autoRouteActive = true;
+          continue;
+        } else if (decision.type === 'step_back') {
+          if (pathHistory.length >= 2) {
+            const fromId = player.stationId;
+            pathHistory.pop(); // 現在の駅を取り除く
+            const backStId = pathHistory[pathHistory.length - 1];
+
+            KT.audio.SE.cancel();
+            await KT.mapRenderer.animateTrainStep(pIdx, fromId, backStId, 165);
+
+            player.stationId = backStId;
+            remaining++; // 歩数を1回復！
+            updateAllUI();
+          }
+          continue;
+        } else if (decision.type === 'move_to' && decision.stationId) {
+          const fromId = player.stationId;
+          // もし選んだ先が「直前に来た駅（prevStationId）」なら、1マス戻って歩数＋1回復！
+          if (decision.stationId === prevStationId) {
+            pathHistory.pop();
+            KT.audio.SE.cancel();
+            await KT.mapRenderer.animateTrainStep(pIdx, fromId, prevStationId, 165);
+            player.stationId = prevStationId;
+            remaining++;
+          } else {
+            pathHistory.push(decision.stationId);
+            KT.audio.SE.step();
+            await KT.mapRenderer.animateTrainStep(pIdx, fromId, decision.stationId, 175);
+            player.stationId = decision.stationId;
+            remaining--;
+            checkBinboTransferOnPass(player);
+          }
+          updateAllUI();
+        }
+      }
+    } finally {
+      document.body.classList.remove('moving-phase');
+      KT.mapRenderer.setHighlightedBranches([], null, null);
+      const guideBar = document.getElementById('move-guide-bar');
+      if (guideBar) guideBar.classList.add('hidden');
+    }
 
     updateAllUI();
     await delay(220);
@@ -720,17 +726,16 @@ window.KT = window.KT || {};
         resolve(result);
       };
 
-      // 残り0マスの場合：「⭕ この駅に止まる！」または「来た方向の矢印キーで1マスもどる」
+      // 残り0マスの場合：「⭕ この駅に止まる！」または「来た方向の駅タップ/矢印キーで1マスもどる」
       if (remainingSteps === 0) {
-        const backHint = backDirInfo ? `（${backDirInfo.arrow}${backDirInfo.label}キーで1マス戻れます）` : '';
         if (remBadge) {
-          remBadge.innerHTML = `📍 【${curSt.name}】に到着！（のこり 0 マス）${backHint}`;
+          remBadge.innerHTML = `📍 <strong>【${curSt.name}】</strong>（のこり 0 マス）`;
         }
         if (autoBtn) autoBtn.style.display = 'none';
         if (listEl) {
           listEl.innerHTML = `
-            <button id="btn-confirm-stop" class="branch-choice-btn recommended" style="padding:10px 28px; font-size:1.15rem;">
-              ⭕ この駅に止まる！（Enter / Space）
+            <button id="btn-confirm-stop" class="branch-choice-btn recommended" style="padding:5px 16px; font-size:0.92rem;">
+              ⭕ この駅に止まる！（タップで決定）
             </button>
           `;
           document.getElementById('btn-confirm-stop')?.addEventListener('click', () => {
@@ -738,9 +743,12 @@ window.KT = window.KT || {};
           });
         }
       } else {
-        // 残り1マス以上ある場合：上下左右の方向ボタン一覧を表示
+        // 残り1マス以上ある場合：マップ上の駅タップ案内＆補助ボタン
         if (remBadge) {
-          remBadge.innerHTML = `🚂 のこり <strong>${remainingSteps}</strong> マス！ 矢印キー(↑↓←→) で進んだり戻ったりできます！`;
+          const isMobile = window.innerWidth <= 600;
+          remBadge.innerHTML = isMobile
+            ? `🚂 のこり <strong>${remainingSteps}</strong> マス（駅をタップ！）`
+            : `🚂 のこり <strong>${remainingSteps}</strong> マス！ （マップタップ または 矢印キーで移動）`;
         }
         if (autoBtn) autoBtn.style.display = 'inline-block';
 

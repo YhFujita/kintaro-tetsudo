@@ -1,9 +1,9 @@
 /**
- * きんたろうてつどう - 全国47都道府県 インタラクティブSVGマップ描画エンジン (Ver 3.0 本家桃鉄・完全直交グリッド＆移動アニメーション対応)
- * ・すべての線路が100%縦（南北）または横（東西）の直交グリッド（斜め線ゼロ！）
- * ・現在地に「社長キャラ顔アイコン＋列車＋現在地スポットライト＋残り歩数バッジ」を大きく表示
- * ・駅間をスイスイ滑るように走る60fps移動アニメーション（animateTrainStep）
- * ・現在地の上下左右の線路上に直接出る「⬆️⬇️⬅️➡️ 方向矢印ガイド」と「↩️ もどる矢印」
+ * きんたろうてつどう - 全国47都道府県 インタラクティブSVGマップ描画エンジン (Ver 3.5 超軽量・省バッテリー＆マップダイレクトタップ移動対応)
+ * ・常時RAFループを完全撤去！カメラ静止時はCPU/GPU稼働率ゼロで発熱・バッテリー消費を大幅抑制
+ * ・重いSVGフィルター（feDropShadow）や巨大パターンを廃止し、iPhone Safariでも超軽快動作
+ * ・進める駅・方向矢印に大きな透明タッチ判定（半径48px）を配置し、指でポンポン快適に1マス移動
+ * ・残り0マスのときは現在地駅をタップするだけで「⭕ ここに止まる！」が即座に実行
  */
 window.KT = window.KT || {};
 
@@ -13,14 +13,18 @@ window.KT = window.KT || {};
   let staticLayer = null;
   let dynamicLayer = null;
 
-  // カメラ座標（現在値と目標値を補間してなめらかに追従）
+  // カメラ座標＆キャッシュ
   let camX = 3220;
   let camY = 2015;
   let targetCamX = 3220;
   let targetCamY = 2015;
   let zoom = 0.88;
   let targetZoom = 0.88;
+  let isCameraActive = false;
   let animFrameId = null;
+
+  let cachedVw = window.innerWidth;
+  let cachedVh = window.innerHeight;
 
   let isDragging = false;
   let dragMoved = false;
@@ -70,21 +74,65 @@ window.KT = window.KT || {};
     }
   ];
 
+  function updateViewportCache() {
+    if (svgEl) {
+      const rect = svgEl.getBoundingClientRect();
+      cachedVw = rect.width || window.innerWidth;
+      cachedVh = rect.height || window.innerHeight;
+    } else {
+      cachedVw = window.innerWidth;
+      cachedVh = window.innerHeight;
+    }
+  }
+
+  function applyCameraTransform() {
+    if (cameraGroup) {
+      const tx = cachedVw / 2 - camX * zoom;
+      const ty = cachedVh / 2 - camY * zoom;
+      cameraGroup.setAttribute('transform', `translate(${tx.toFixed(1)}, ${ty.toFixed(1)}) scale(${zoom.toFixed(3)})`);
+    }
+  }
+
+  /**
+   * カメラが必要な時だけRAFを実行（目標値に到達したら即座に停止してバッテリー消費ゼロに！）
+   */
+  function requestCameraUpdate() {
+    if (isCameraActive) return;
+    isCameraActive = true;
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    animFrameId = requestAnimationFrame(cameraStep);
+  }
+
+  function cameraStep() {
+    const dx = targetCamX - camX;
+    const dy = targetCamY - camY;
+    const dz = targetZoom - zoom;
+
+    // 誤差が微小になったらスリープ停止
+    if (Math.abs(dx) < 0.15 && Math.abs(dy) < 0.15 && Math.abs(dz) < 0.001) {
+      camX = targetCamX;
+      camY = targetCamY;
+      zoom = targetZoom;
+      isCameraActive = false;
+      animFrameId = null;
+      applyCameraTransform();
+      return;
+    }
+
+    camX += dx * 0.30;
+    camY += dy * 0.30;
+    zoom += dz * 0.28;
+
+    applyCameraTransform();
+    animFrameId = requestAnimationFrame(cameraStep);
+  }
+
   function initMap(svgElement, stationClickHandler) {
     svgEl = svgElement;
     onStationClickCallback = stationClickHandler;
+    updateViewportCache();
 
     svgEl.innerHTML = `
-      <defs>
-        <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="150%">
-          <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.38"/>
-        </filter>
-        <pattern id="seaGrid" width="230" height="155" patternUnits="userSpaceOnUse">
-          <rect width="230" height="155" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
-          <path d="M 40 78 Q 75 63 110 78 T 180 78" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="3" stroke-linecap="round"/>
-        </pattern>
-      </defs>
-      <rect x="-4000" y="-4000" width="14000" height="14000" fill="url(#seaGrid)" pointer-events="none"/>
       <g id="map-camera-group">
         <g id="map-static-layer"></g>
         <g id="map-dynamic-layer"></g>
@@ -97,17 +145,27 @@ window.KT = window.KT || {};
 
     renderStaticBackgroundAndTracks();
     setupPanAndZoom();
-    startCameraLoop();
+    applyCameraTransform();
+
+    window.addEventListener('resize', () => {
+      updateViewportCache();
+      requestCameraUpdate();
+    });
   }
 
   /**
-   * 地形と100%縦・横の直交線路を初回に描画
+   * 地形と直交線路を描画（重いSVGフィルタは不使用で超高速描画）
    */
   function renderStaticBackgroundAndTracks() {
     if (!staticLayer) return;
 
+    // 地形の下にシンプルな立体影（ベクターオフセット描画）
+    const shadowSvg = JAPAN_LAND_PATHS.map(p => `
+      <path d="${p.d}" fill="#01579b" opacity="0.32" transform="translate(0, 16)"/>
+    `).join('');
+
     const landSvg = JAPAN_LAND_PATHS.map(p => `
-      <path d="${p.d}" fill="${p.fill}" stroke="${p.stroke}" stroke-width="14" stroke-linejoin="round" filter="url(#tileShadow)"/>
+      <path d="${p.d}" fill="${p.fill}" stroke="${p.stroke}" stroke-width="12" stroke-linejoin="round"/>
     `).join('');
 
     // 地方名プレート
@@ -120,13 +178,14 @@ window.KT = window.KT || {};
       { label: '中国・四国エリア', x: 1150, y: 1850, color: '#ef6c00' },
       { label: '九州・沖縄エリア', x: 460, y: 2160, color: '#c62828' }
     ].map(b => `
-      <g transform="translate(${b.x}, ${b.y})" opacity="0.9">
+      <g transform="translate(${b.x}, ${b.y})" opacity="0.92">
+        <rect x="-95" y="-18" width="190" height="36" rx="18" fill="#1b2a32" opacity="0.4"/>
         <rect x="-95" y="-22" width="190" height="36" rx="18" fill="${b.color}" stroke="#fff" stroke-width="3"/>
         <text x="0" y="3" font-size="16" font-weight="900" fill="#fff" text-anchor="middle">${b.label}</text>
       </g>
     `).join('');
 
-    // 100%縦（南北）または横（東西）の路線リンク描画
+    // 100%縦・横の線路描画
     const drawnEdges = new Set();
     const linesSvg = [];
     KT.STATIONS.forEach(st => {
@@ -142,35 +201,34 @@ window.KT = window.KT || {};
                       (st.id === 'aomori' && target.id === 'hakodate') || (st.id === 'hakodate' && target.id === 'aomori');
 
         if (isSea) {
-          // 海路・青函トンネル・沖縄航路（水色の点線レーン）
           linesSvg.push(`
             <line x1="${st.x}" y1="${st.y}" x2="${target.x}" y2="${target.y}"
-                  stroke="#0288d1" stroke-width="18" stroke-linecap="round"/>
+                  stroke="#0277bd" stroke-width="18" stroke-linecap="round"/>
             <line x1="${st.x}" y1="${st.y}" x2="${target.x}" y2="${target.y}"
-                  stroke="#80d8ff" stroke-width="10" stroke-dasharray="14,12" stroke-linecap="round"/>
+                  stroke="#e1f5fe" stroke-width="8" stroke-dasharray="14,12" stroke-linecap="round"/>
           `);
         } else {
-          // 本家桃鉄風のくっきりした縦・横の枕木付き線路
           linesSvg.push(`
             <line x1="${st.x}" y1="${st.y}" x2="${target.x}" y2="${target.y}"
                   stroke="#263238" stroke-width="20" stroke-linecap="round"/>
             <line x1="${st.x}" y1="${st.y}" x2="${target.x}" y2="${target.y}"
                   stroke="#eceff1" stroke-width="12" stroke-linecap="round"/>
             <line x1="${st.x}" y1="${st.y}" x2="${target.x}" y2="${target.y}"
-                  stroke="#37474f" stroke-width="10" stroke-dasharray="10,14" stroke-linecap="round"/>
+                  stroke="#37474f" stroke-width="9" stroke-dasharray="10,14" stroke-linecap="round"/>
           `);
         }
       });
     });
 
     staticLayer.innerHTML = `
+      ${shadowSvg}
       ${landSvg}
       ${regionBanners}
       <g class="routes-layer">${linesSvg.join('')}</g>
     `;
   }
 
-  // マルチタッチ・ピンチズーム対応トラッキング
+  // マルチタッチ・ピンチズーム対応
   const activePointers = new Map();
   let pinchInitialDist = null;
   let pinchInitialZoom = null;
@@ -184,9 +242,9 @@ window.KT = window.KT || {};
 
   function getResponsiveZoom(baseZoom) {
     if (window.innerWidth <= 480) {
-      return Math.max(0.32, baseZoom * 0.82);
+      return Math.max(0.32, baseZoom * 0.85);
     } else if (window.innerWidth <= 768) {
-      return Math.max(0.32, baseZoom * 0.90);
+      return Math.max(0.32, baseZoom * 0.92);
     }
     return baseZoom;
   }
@@ -201,7 +259,6 @@ window.KT = window.KT || {};
       try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
 
       if (activePointers.size === 1) {
-        // ダブルタップで少し拡大
         const now = performance.now();
         if (now - lastTapTime < 320) {
           adjustZoom(1.3);
@@ -217,7 +274,6 @@ window.KT = window.KT || {};
         camStartX = targetCamX;
         camStartY = targetCamY;
       } else if (activePointers.size === 2) {
-        // 2本指でのピンチズーム開始
         isDragging = false;
         dragMoved = true;
         const [p1, p2] = Array.from(activePointers.values());
@@ -236,14 +292,14 @@ window.KT = window.KT || {};
         if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved = true;
         targetCamX = Math.max(200, Math.min(4100, camStartX - dx));
         targetCamY = Math.max(80, Math.min(3400, camStartY - dy));
-        camX = targetCamX;
-        camY = targetCamY;
+        requestCameraUpdate();
       } else if (activePointers.size === 2 && pinchInitialDist) {
         const [p1, p2] = Array.from(activePointers.values());
         const currentDist = getDistance(p1, p2);
         if (currentDist > 10 && pinchInitialDist > 10) {
           const scale = currentDist / pinchInitialDist;
           targetZoom = Math.max(0.30, Math.min(1.80, pinchInitialZoom * scale));
+          requestCameraUpdate();
         }
       }
     });
@@ -256,7 +312,6 @@ window.KT = window.KT || {};
         isDragging = false;
         pinchInitialDist = null;
       } else if (activePointers.size === 1) {
-        // 2本指から1本指に戻った時、急激なジャンプを防ぐためドラッグ開始点を再初期化
         const remaining = Array.from(activePointers.values())[0];
         isDragging = true;
         dragStartX = remaining.clientX;
@@ -274,34 +329,16 @@ window.KT = window.KT || {};
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.15 : 0.87;
       targetZoom = Math.max(0.30, Math.min(1.80, targetZoom * factor));
+      requestCameraUpdate();
     }, { passive: false });
-  }
-
-  function startCameraLoop() {
-    function step() {
-      camX += (targetCamX - camX) * 0.25;
-      camY += (targetCamY - camY) * 0.25;
-      zoom += (targetZoom - zoom) * 0.22;
-
-      if (svgEl && cameraGroup) {
-        const rect = svgEl.getBoundingClientRect();
-        const vw = rect.width || window.innerWidth;
-        const vh = rect.height || window.innerHeight;
-        const tx = vw / 2 - camX * zoom;
-        const ty = vh / 2 - camY * zoom;
-        cameraGroup.setAttribute('transform', `translate(${tx.toFixed(1)}, ${ty.toFixed(1)}) scale(${zoom.toFixed(3)})`);
-      }
-      animFrameId = requestAnimationFrame(step);
-    }
-    if (!animFrameId) animFrameId = requestAnimationFrame(step);
   }
 
   function focusOnStation(stationId, newZoom = null, instant = false) {
     const st = KT.STATION_MAP.get(stationId);
     if (!st) return;
     targetCamX = st.x;
-    // スマホでは下部ドックやヘッダーが上下にあるため、少し中央より上に配置して見やすく
-    const offsetY = window.innerWidth <= 768 ? 10 : 20;
+    // スマホでは地図をより広く見せるためオフセットを最小化
+    const offsetY = window.innerWidth <= 768 ? 5 : 15;
     targetCamY = st.y - offsetY;
     if (newZoom !== null) {
       targetZoom = getResponsiveZoom(newZoom);
@@ -310,11 +347,15 @@ window.KT = window.KT || {};
       camX = targetCamX;
       camY = targetCamY;
       if (newZoom !== null) zoom = targetZoom;
+      applyCameraTransform();
+    } else {
+      requestCameraUpdate();
     }
   }
 
   function adjustZoom(deltaFactor) {
     targetZoom = Math.max(0.30, Math.min(1.80, targetZoom * deltaFactor));
+    requestCameraUpdate();
   }
 
   function setHighlightedBranches(stationIds = [], backStationId = null, remainingSteps = null) {
@@ -325,10 +366,6 @@ window.KT = window.KT || {};
 
   /**
    * 駅間を滑らかに移動するアニメーション（60fps補間＋カメラ追従）
-   * @param {number} playerIndex - 移動するプレイヤーのインデックス
-   * @param {string} fromStationId - 出発駅ID
-   * @param {string} toStationId - 到着駅ID
-   * @param {number} durationMs - 移動時間(ms)
    */
   function animateTrainStep(playerIndex, fromStationId, toStationId, durationMs = 180) {
     return new Promise(resolve => {
@@ -345,9 +382,8 @@ window.KT = window.KT || {};
         return;
       }
 
-      // 移動アニメーション中は矢印ガイドを一時非表示にしてスッキリ見せる
       const arrowsLayer = dynamicLayer.querySelector('.arrows-layer');
-      if (arrowsLayer) arrowsLayer.style.opacity = '0.2';
+      if (arrowsLayer) arrowsLayer.style.opacity = '0.15';
 
       const actualDuration = Math.max(55, KT.dialogs && KT.dialogs.scaledTime ? KT.dialogs.scaledTime(durationMs) : durationMs);
       const startTime = performance.now();
@@ -359,7 +395,8 @@ window.KT = window.KT || {};
         clearTimeout(safetyTimer);
         markerEl.setAttribute('transform', `translate(${toSt.x}, ${toSt.y})`);
         targetCamX = toSt.x;
-        targetCamY = toSt.y - 20;
+        targetCamY = toSt.y - 10;
+        requestCameraUpdate();
         resolve();
       };
 
@@ -369,7 +406,6 @@ window.KT = window.KT || {};
         if (done) return;
         const elapsed = now - startTime;
         const t = Math.min(1, elapsed / actualDuration);
-        // なめらかなイージング + 軽快なジャンプ弧
         const ease = 1 - Math.pow(1 - t, 2.2);
         const curX = fromSt.x + (toSt.x - fromSt.x) * ease;
         const curY = fromSt.y + (toSt.y - fromSt.y) * ease;
@@ -377,9 +413,9 @@ window.KT = window.KT || {};
 
         markerEl.setAttribute('transform', `translate(${curX.toFixed(1)}, ${(curY + hopY).toFixed(1)})`);
 
-        // カメラもキャラクターに合わせて滑らかに追従
         targetCamX = curX;
-        targetCamY = curY - 20;
+        targetCamY = curY - 10;
+        requestCameraUpdate();
 
         if (t < 1) {
           requestAnimationFrame(tick);
@@ -403,12 +439,12 @@ window.KT = window.KT || {};
     const curSt = curPlayer ? KT.STATION_MAP.get(curPlayer.stationId) : null;
     const goalSt = state.goalStationId ? KT.STATION_MAP.get(state.goalStationId) : null;
 
-    // 1. 現在地から目的地へのゴールドコンパス点線
+    // 1. 目的地へのゴールド点線コンパス
     let compassLineSvg = '';
     if (curSt && goalSt && curSt.id !== goalSt.id) {
       compassLineSvg = `
         <line x1="${curSt.x}" y1="${curSt.y}" x2="${goalSt.x}" y2="${goalSt.y}"
-              stroke="#ffd600" stroke-width="5" stroke-dasharray="16,14" opacity="0.6" pointer-events="none"/>
+              stroke="#ffd600" stroke-width="4.5" stroke-dasharray="14,12" opacity="0.65" pointer-events="none"/>
       `;
     }
 
@@ -447,7 +483,8 @@ window.KT = window.KT || {};
         }).join('');
 
         tileSvg = `
-          <rect x="${-w / 2}" y="${-h / 2 + 4}" width="${w}" height="${h}" rx="12" fill="#263238" opacity="0.45"/>
+          <!-- 単純な影矩形（フィルター不使用） -->
+          <rect x="${-w / 2}" y="${-h / 2 + 5}" width="${w}" height="${h}" rx="12" fill="#212121" opacity="0.32"/>
           <rect x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="12"
                 fill="${bgFill}" stroke="${borderCol}" stroke-width="${borderW}"/>
           <path d="M ${-w / 2 + 3} ${-h / 2 + 16} L ${w / 2 - 3} ${-h / 2 + 16}" stroke="#cfd8dc" stroke-width="1.5"/>
@@ -469,50 +506,69 @@ window.KT = window.KT || {};
         const ringW = (isCurrentHere || isBranchChoice) ? 6 : 4;
 
         tileSvg = `
-          <circle cx="0" cy="4" r="22" fill="#263238" opacity="0.35"/>
+          <circle cx="0" cy="4" r="22" fill="#212121" opacity="0.28"/>
           <circle cx="0" cy="0" r="22" fill="${cfg.fill}" stroke="${ringStroke}" stroke-width="${ringW}"/>
           <ellipse cx="-6" cy="-8" rx="8" ry="4" fill="rgba(255,255,255,0.35)" transform="rotate(-25 -6 -8)"/>
           <text x="0" y="7" font-size="19" font-weight="900" fill="${cfg.textCol}" text-anchor="middle">${cfg.text}</text>
-          <rect x="-40" y="25" width="80" height="17" rx="8" fill="rgba(38,50,56,0.86)"/>
+          <rect x="-40" y="25" width="80" height="17" rx="8" fill="rgba(38,50,56,0.88)"/>
           <text x="0" y="37" font-size="10.5" font-weight="800" fill="#fff" text-anchor="middle">${st.name}</text>
         `;
       }
 
-      // 目的地フラッグ演出
+      // 目的地フラッグ
       const goalBanner = isGoal ? `
-        <circle cx="0" cy="0" r="46" fill="none" stroke="#ff1744" stroke-width="6" class="goal-pulse-ring"/>
+        <circle cx="0" cy="0" r="46" fill="none" stroke="#ff1744" stroke-width="5" class="goal-pulse-ring"/>
         <g transform="translate(0, 44)">
-          <rect x="-66" y="0" width="132" height="26" rx="13" fill="#d50000" stroke="#ffeb3b" stroke-width="3" filter="url(#tileShadow)"/>
+          <rect x="-66" y="2" width="132" height="26" rx="13" fill="#212121" opacity="0.3"/>
+          <rect x="-66" y="0" width="132" height="26" rx="13" fill="#d50000" stroke="#ffeb3b" stroke-width="3"/>
           <text x="0" y="18" font-size="13.5" font-weight="900" fill="#ffeb3b" text-anchor="middle">🏁 もくてきち！</text>
         </g>
       ` : '';
 
-      // 移動中の隣接マスガイド（「あとXマス」または「↩️1マスもどる」）
+      // 進める駅の光るバッジ＆案内
       let branchBadge = '';
       if (isBranchChoice) {
         branchBadge = `
-          <g transform="translate(0, -42)">
+          <!-- 進める駅の光るガイドサークル -->
+          <circle cx="0" cy="0" r="48" fill="rgba(0, 230, 118, 0.22)" stroke="${isBackChoice ? '#78909c' : '#00e676'}" stroke-width="4.5" stroke-dasharray="8,6" class="branch-pulse-ring"/>
+          <g transform="translate(0, -44)">
+            <rect x="-56" y="-20" width="112" height="26" rx="13" fill="#212121" opacity="0.35"/>
             <rect x="-56" y="-22" width="112" height="26" rx="13"
-                  fill="${isBackChoice ? '#546e7a' : '#00c853'}" stroke="#ffffff" stroke-width="3" filter="url(#tileShadow)"/>
+                  fill="${isBackChoice ? '#546e7a' : '#00c853'}" stroke="#ffffff" stroke-width="3"/>
             <text x="0" y="-4" font-size="12.5" font-weight="900" fill="#fff" text-anchor="middle">
-              ${isBackChoice ? '↩️ 1マスもどる' : `あと ${dist} マス`}
+              ${isBackChoice ? '↩️ もどる' : `あと ${dist} マス`}
             </text>
           </g>
         `;
       }
 
+      // 残り0マスで現在地駅に到着した時の「⭕ ここに止まる！」タップ用ビッグボタン
+      let stopButtonSvg = '';
+      if (isCurrentHere && currentRemainingSteps === 0) {
+        stopButtonSvg = `
+          <g transform="translate(0, -82)" class="stop-confirm-badge" style="cursor:pointer;">
+            <circle cx="0" cy="0" r="32" fill="#d50000" stroke="#ffeb3b" stroke-width="4"/>
+            <text x="0" y="-4" font-size="18" font-weight="900" fill="#fff" text-anchor="middle">⭕</text>
+            <text x="0" y="14" font-size="11.5" font-weight="900" fill="#ffeb3b" text-anchor="middle">止まる</text>
+          </g>
+        `;
+      }
+
       return `
-        <g class="station-node-group" data-station-id="${st.id}" transform="translate(${st.x}, ${st.y})" style="cursor:pointer;">
+        <g class="station-node-group ${isBranchChoice ? 'can-move-target' : ''}" data-station-id="${st.id}" transform="translate(${st.x}, ${st.y})" style="cursor:pointer;">
+          <!-- スマホでタップしやすい広域タッチ判定エリア（半径52px） -->
+          <circle cx="0" cy="0" r="54" fill="transparent" pointer-events="all"/>
           ${tileSvg}
           ${goalBanner}
           ${branchBadge}
+          ${stopButtonSvg}
         </g>
       `;
     }).join('');
 
-    // 3. 移動中：現在地の線路の上下左右に直接「光る直交矢印ボタン（↑・↓・←・→）」を描画
+    // 3. 移動中：現在地の上下左右に出る「光る方向矢印ボタン（⬆️⬇️⬅️➡️）」
     let arrowsSvg = '';
-    if (curSt && highlightedBranchIds.size > 0) {
+    if (curSt && highlightedBranchIds.size > 0 && currentRemainingSteps > 0) {
       let bestDist = 9999;
       highlightedBranchIds.forEach(id => {
         if (id === previousStationIdForBack) return;
@@ -522,10 +578,10 @@ window.KT = window.KT || {};
 
       const neighbors = KT.getDirectionalNeighbors ? KT.getDirectionalNeighbors(curSt.id) : {};
       const dirConfigs = [
-        { dir: 'up',    id: neighbors.up,    ox: 0,    oy: -88, rot: -90, keyLabel: '↑' },
-        { dir: 'down',  id: neighbors.down,  ox: 0,    oy: 78,  rot: 90,  keyLabel: '↓' },
-        { dir: 'left',  id: neighbors.left,  ox: -102, oy: 0,   rot: 180, keyLabel: '←' },
-        { dir: 'right', id: neighbors.right, ox: 102,  oy: 0,   rot: 0,   keyLabel: '→' }
+        { dir: 'up',    id: neighbors.up,    ox: 0,    oy: -95, rot: -90, keyLabel: '↑', textLabel: '北' },
+        { dir: 'down',  id: neighbors.down,  ox: 0,    oy: 85,  rot: 90,  keyLabel: '↓', textLabel: '南' },
+        { dir: 'left',  id: neighbors.left,  ox: -112, oy: 0,   rot: 180, keyLabel: '←', textLabel: '西' },
+        { dir: 'right', id: neighbors.right, ox: 112,  oy: 0,   rot: 0,   keyLabel: '→', textLabel: '東' }
       ];
 
       arrowsSvg = dirConfigs.map(cfg => {
@@ -541,17 +597,19 @@ window.KT = window.KT || {};
 
         return `
           <g class="map-dir-arrow" data-target-id="${cfg.id}" transform="translate(${ax}, ${ay})" style="cursor:pointer;">
+            <!-- 広域タッチ判定エリア -->
+            <circle cx="0" cy="0" r="42" fill="transparent" pointer-events="all"/>
             <g transform="rotate(${cfg.rot})">
-              <polygon points="30,0 -18,-24 -8,0 -18,24" fill="${fillCol}" stroke="${strokeCol}" stroke-width="4" filter="url(#tileShadow)"/>
+              <polygon points="34,0 -20,-26 -9,0 -20,26" fill="${fillCol}" stroke="${strokeCol}" stroke-width="4.5"/>
             </g>
-            <circle cx="0" cy="0" r="13" fill="#263238" stroke="#fff" stroke-width="2"/>
-            <text x="0" y="5" font-size="14" font-weight="900" fill="#fff" text-anchor="middle">${cfg.keyLabel}</text>
+            <circle cx="0" cy="0" r="15" fill="#263238" stroke="#fff" stroke-width="2.5"/>
+            <text x="0" y="5.5" font-size="14.5" font-weight="900" fill="#fff" text-anchor="middle">${cfg.keyLabel}</text>
           </g>
         `;
       }).join('');
     }
 
-    // 4. プレイヤーの「社長キャラクター＋列車」コマ描画（現在手番プレイヤーを最前面に描画！）
+    // 4. プレイヤーコマの描画
     const renderOrder = state.players
       .map((p, idx) => ({ p, idx }))
       .sort((a, b) => (a.idx === state.currentPlayerIndex ? 1 : b.idx === state.currentPlayerIndex ? -1 : a.idx - b.idx));
@@ -560,7 +618,6 @@ window.KT = window.KT || {};
       const st = KT.STATION_MAP.get(p.stationId);
       if (!st) return '';
       const isCurrent = idx === state.currentPlayerIndex;
-      // 手番外のプレイヤーは駅の四隅に少しずらして配置し、現在手番プレイヤーは駅のど真ん中に堂々と配置！
       const cornerOffsets = [[-54, -24], [54, -24], [-54, 30], [54, 30]];
       const [ox, oy] = isCurrent ? [0, 0] : cornerOffsets[idx % 4];
       const hasBinbo = state.binboPlayerIndex === idx ? state.binboForm : null;
@@ -583,22 +640,41 @@ window.KT = window.KT || {};
       <g class="players-layer">${playersSvg}</g>
     `;
 
-    // クリックイベントバインド
+    // スマホ・PC双方で最も反応が良く誤爆しない高精度タップイベントバインド
+    function bindNodeTap(element, handler) {
+      let startX = 0;
+      let startY = 0;
+      let startTime = 0;
+
+      element.addEventListener('pointerdown', e => {
+        startX = e.clientX;
+        startY = e.clientY;
+        startTime = performance.now();
+      });
+
+      element.addEventListener('pointerup', e => {
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
+        const dt = performance.now() - startTime;
+        // 指の微小なズレ（14px以内）かつ短時間タップなら確実に発火
+        if (dx < 16 && dy < 16 && dt < 650) {
+          e.stopPropagation();
+          handler();
+        }
+      });
+    }
+
     dynamicLayer.querySelectorAll('.station-node-group').forEach(node => {
-      node.addEventListener('click', e => {
-        if (dragMoved) return;
-        e.stopPropagation();
-        const stId = node.getAttribute('data-station-id');
+      const stId = node.getAttribute('data-station-id');
+      bindNodeTap(node, () => {
         if (onStationClickCallback) onStationClickCallback(stId);
       });
     });
 
     dynamicLayer.querySelectorAll('.map-dir-arrow').forEach(arrow => {
-      arrow.addEventListener('click', e => {
-        if (dragMoved) return;
-        e.stopPropagation();
-        const stId = arrow.getAttribute('data-target-id');
-        if (onStationClickCallback) onStationClickCallback(stId);
+      const targetId = arrow.getAttribute('data-target-id');
+      bindNodeTap(arrow, () => {
+        if (onStationClickCallback) onStationClickCallback(targetId);
       });
     });
   }

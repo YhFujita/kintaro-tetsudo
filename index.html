@@ -147,24 +147,24 @@
       <button id="btn-focus-goal" class="hud-icon-btn zoom-btn" title="目的地へ"><span class="btn-icon">🏁</span><span class="btn-text"> 目的地へ</span></button>
     </aside>
 
-    <!-- 下部：移動操作バー＆コマンド・メッセージ統合ドック -->
-    <footer class="bottom-hud">
-      <!-- 桃鉄風：移動＆分岐選択＆1マス戻るガイド（移動中のみ表示） -->
-      <div id="move-guide-bar" class="hidden">
-        <div class="move-guide-header">
-          <div id="steps-remaining-text" class="steps-remaining-badge"></div>
-          <div class="move-assist-btns">
-            <button id="btn-auto-route" class="btn-auto-route" title="目的地への最短ルートで自動的に進みます">
-              🌟 最短おまかせ<span class="btn-key-hint">（Space）</span>
-            </button>
-            <button id="btn-step-back" class="btn-step-back" title="来た道を1マス戻って歩数を回復します">
-              ↩️ 1マスもどる<span class="btn-key-hint">（BackSpace）</span>
-            </button>
-          </div>
+    <!-- 移動操作フローティングピル（移動フェーズ中にマップ上部に超スリム表示） -->
+    <div id="move-guide-bar" class="floating-move-hud hidden">
+      <div class="move-guide-header">
+        <div id="steps-remaining-text" class="steps-remaining-badge"></div>
+        <div class="move-assist-btns">
+          <button id="btn-auto-route" class="btn-auto-route" title="目的地への最短ルートで自動的に進みます">
+            🌟 おまかせ<span class="btn-key-hint">（Space）</span>
+          </button>
+          <button id="btn-step-back" class="btn-step-back" title="来た道を1マス戻って歩数を回復します">
+            ↩️ 1マスもどる<span class="btn-key-hint">（BackSpace）</span>
+          </button>
         </div>
-        <div id="branch-btn-list" class="branch-btn-list"></div>
       </div>
+      <div id="branch-btn-list" class="branch-btn-list"></div>
+    </div>
 
+    <!-- 下部：通常時メッセージ＆コマンド統合ドック（移動中は自動で隠れて全画面地図になります） -->
+    <footer class="bottom-hud">
       <!-- 下部ドック（メッセージ＋コマンドボタン） -->
       <div class="bottom-dock-row">
         <div id="message-box">

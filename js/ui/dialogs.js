@@ -832,6 +832,8 @@ window.KT = window.KT || {};
       const slotColorClass = colorClasses[playerIndex % 4] || 'p-red';
       const slotLabels = ['🔴 1P', '🔵 2P', '🟡 3P', '🟢 4P'];
       const slotLabel = slotLabels[playerIndex % 4] || `${playerIndex + 1}P`;
+      const defaultAvatars = ['player1', 'player2', 'player3', 'player4'];
+      const avatarType = player.avatar || defaultAvatars[playerIndex % 4] || 'player1';
 
       openModal(`
         <div class="turn-notice-card">
@@ -840,7 +842,7 @@ window.KT = window.KT || {};
             <span>${player.name} の番です！</span>
           </div>
           <div class="turn-notice-avatar">
-            ${KT.svg.getCharacterSVG(player.avatar, 'happy', 96)}
+            ${KT.svg.getCharacterSVG(avatarType, 'happy', 96)}
           </div>
           <div class="turn-notice-instruction">
             📱 端末（コントローラー）を交代してください！<br>

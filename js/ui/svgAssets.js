@@ -6,13 +6,15 @@
 window.KT = window.KT || {};
 
 (function () {
+  const KT = window.KT;
   /**
    * キャラクターSVGを返す
    * @param {string} type - 'kintaro' | 'player1' | 'player2' | 'player3' | 'player4' | 'mame_oni' | 'aka_oni' | 'mecha_oni' | 'binbo' | 'chibi' | 'king' | 'angel' | 'nyanko' | 'namahage' | 'dino' | 'takoyaki' | 'shisa'
    * @param {string} mood - 'normal' | 'happy' | 'sad' | 'shock'
    * @param {number} size - ピクセルサイズ
    */
-  function getCharacterSVG(type, mood = 'normal', size = 80) {
+  function getCharacterSVG(type = 'kintaro', mood = 'normal', size = 80) {
+    if (!type) type = 'kintaro';
     // 共通のポップ＆カワイイ目・口パーツ（怖い白目や歯の線をなくし、ぷるんと可愛い瞳に！）
     const renderEyes = (m, color = '#3e2723') => {
       if (m === 'happy') {
@@ -156,7 +158,7 @@ window.KT = window.KT || {};
           <!-- ③ 右手のポップな「お星さま付きキラキラ金まさかりステッキ」✨ -->
           <g transform="translate(82, 57) rotate(15)">
             <rect x="-3" y="-16" width="6" height="44" rx="3" fill="#ffb74d" stroke="#4e342e" stroke-width="2.2"/>
-            <path d="M-1 -14 C14 -24, 23 -10, 19 6 C16 18, 10 20, -1 10 Z" fill="url(#popGold)" stroke="#4e342e" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M-1 -14 C14 -24, 23 -10, 19 6 C16 18, 10 20, -1 10 Z" fill="#ffd54f" stroke="#4e342e" stroke-width="2.4" stroke-linejoin="round"/>
             <text x="8" y="2" font-size="10" fill="#ff5252" text-anchor="middle">★</text>
           </g>
 
@@ -170,10 +172,10 @@ window.KT = window.KT || {};
           <polygon points="50,66 60,61 60,71" fill="#ffd54f" stroke="#4e342e" stroke-width="1.8" stroke-linejoin="round"/>
           <circle cx="50" cy="66" r="3.5" fill="#ffca28" stroke="#4e342e" stroke-width="1.8"/>
 
-          <!-- ⑤ ぷっくり丸い可愛いお顔輪郭 -->
-          <circle cx="23" cy="49" r="5.5" fill="url(#popSkin)" stroke="#4e342e" stroke-width="2.3"/>
-          <circle cx="77" cy="49" r="5.5" fill="url(#popSkin)" stroke="#4e342e" stroke-width="2.3"/>
-          <ellipse cx="50" cy="47" rx="26" ry="23.5" fill="url(#popSkin)" stroke="#4e342e" stroke-width="2.6"/>
+          <!-- ⑤ ぷっくり丸い可愛いお顔輪郭（グラデーションID参照外れによる顔消失を防止し、確実に鮮やかな肌色を描画） -->
+          <circle cx="23" cy="49" r="5.5" fill="#ffe0bd" stroke="#4e342e" stroke-width="2.3"/>
+          <circle cx="77" cy="49" r="5.5" fill="#ffe0bd" stroke="#4e342e" stroke-width="2.3"/>
+          <ellipse cx="50" cy="47" rx="26" ry="23.5" fill="#ffe0bd" stroke="#4e342e" stroke-width="2.6"/>
 
           <!-- ⑥ ツヤツヤの丸いおかっぱ髪 -->
           <path d="M23 44 C21 17, 79 17, 77 44 C74 33, 67 34, 63 28 C58 34, 42 34, 37 28 C33 34, 26 33, 23 44 Z" fill="#3e2723" stroke="#4e342e" stroke-width="2.4" stroke-linejoin="round"/>

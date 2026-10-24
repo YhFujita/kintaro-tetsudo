@@ -1808,6 +1808,16 @@ body.moving-phase .bottom-hud {
   margin: 10px 0;
   display: flex;
   justify-content: center;
+  align-items: center;
+}
+
+.turn-notice-avatar svg {
+  width: 96px;
+  height: 96px;
+  max-width: 96px;
+  max-height: 96px;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .turn-notice-instruction {

@@ -4380,18 +4380,32 @@ window.KT = window.KT || {};
 
   /**
    * HTMLタグを含む文字列に安全にルビを振る
+   * ・<svg>...</svg>, <style>...</style>, <script>...</script> は内部も含めて完全に保護
    */
   function ruby(htmlOrText) {
     if (htmlOrText === null || htmlOrText === undefined) return '';
-    const str = String(htmlOrText);
-    // <ruby>...</ruby> または HTMLタグで分割し、テキスト部分のみ変換
+    let str = String(htmlOrText);
+
+    // 1. SVG, STYLE, SCRIPT タグ全体をプレースホルダーに退避（内部の<text>等へのルビ混入を完全防止）
+    const rawBlocks = [];
+    str = str.replace(/<(svg|style|script)\b[\s\S]*?<\/\1>/gi, match => {
+      const idx = rawBlocks.length;
+      rawBlocks.push(match);
+      return `\x00RAW_BLOCK_${idx}\x00`;
+    });
+
+    // 2. 既存の <ruby>...</ruby> または HTMLタグで分割し、通常テキスト部分のみ変換
     const tokens = str.split(/(<ruby>[\s\S]*?<\/ruby>|<[^>]+>)/g);
-    return tokens
+    let result = tokens
       .map(token => {
-        if (token.startsWith('<')) return token;
+        if (token.startsWith('<') || token.startsWith('\x00RAW_BLOCK_')) return token;
         return applyRubyToPlainText(token);
       })
       .join('');
+
+    // 3. 退避したタグ全体を完全復元
+    result = result.replace(/\x00RAW_BLOCK_(\d+)\x00/g, (_, idx) => rawBlocks[Number(idx)]);
+    return result;
   }
 
   /**

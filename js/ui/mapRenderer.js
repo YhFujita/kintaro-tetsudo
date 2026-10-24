@@ -8,6 +8,7 @@
 window.KT = window.KT || {};
 
 (function () {
+  const KT = window.KT;
   let svgEl = null;
   let cameraGroup = null;
   let staticLayer = null;
@@ -250,6 +251,13 @@ window.KT = window.KT || {};
     return baseZoom;
   }
 
+  function getCameraOffsetY() {
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return 15;
+    // スマホでは、移動中は中央(10)、通常時（下部ドック表示時）はドックに駅が隠れないよう上寄り(36)
+    return document.body.classList.contains('moving-phase') ? 10 : 36;
+  }
+
   function setupPanAndZoom() {
     const viewport = document.getElementById('map-viewport');
     if (!viewport) return;
@@ -288,12 +296,19 @@ window.KT = window.KT || {};
       activePointers.set(e.pointerId, e);
 
       if (activePointers.size === 1 && isDragging) {
-        const dx = (e.clientX - dragStartX) / zoom;
-        const dy = (e.clientY - dragStartY) / zoom;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved = true;
-        targetCamX = Math.max(200, Math.min(4100, camStartX - dx));
-        targetCamY = Math.max(80, Math.min(3400, camStartY - dy));
-        requestCameraUpdate();
+        const screenDx = e.clientX - dragStartX;
+        const screenDy = e.clientY - dragStartY;
+        // タップ時の微小な指のブレ（8px以内）ではカメラを動かさない
+        if (!dragMoved && (Math.abs(screenDx) > 8 || Math.abs(screenDy) > 8)) {
+          dragMoved = true;
+        }
+        if (dragMoved) {
+          const dx = screenDx / zoom;
+          const dy = screenDy / zoom;
+          targetCamX = Math.max(200, Math.min(4100, camStartX - dx));
+          targetCamY = Math.max(80, Math.min(3400, camStartY - dy));
+          requestCameraUpdate();
+        }
       } else if (activePointers.size === 2 && pinchInitialDist) {
         const [p1, p2] = Array.from(activePointers.values());
         const currentDist = getDistance(p1, p2);
@@ -310,11 +325,17 @@ window.KT = window.KT || {};
       try { viewport.releasePointerCapture(e.pointerId); } catch (_) {}
 
       if (activePointers.size === 0) {
+        // ドラッグ移動しなかったタップの場合は元の目標座標に戻す（ズレの累積を完全遮断）
+        if (isDragging && !dragMoved) {
+          targetCamX = camStartX;
+          targetCamY = camStartY;
+        }
         isDragging = false;
         pinchInitialDist = null;
       } else if (activePointers.size === 1) {
         const remaining = Array.from(activePointers.values())[0];
         isDragging = true;
+        dragMoved = false;
         dragStartX = remaining.clientX;
         dragStartY = remaining.clientY;
         camStartX = targetCamX;
@@ -337,10 +358,9 @@ window.KT = window.KT || {};
   function focusOnStation(stationId, newZoom = null, instant = false) {
     const st = KT.STATION_MAP.get(stationId);
     if (!st) return;
+    updateViewportCache();
     targetCamX = st.x;
-    // スマホでは地図をより広く見せるためオフセットを最小化
-    const offsetY = window.innerWidth <= 768 ? 5 : 15;
-    targetCamY = st.y - offsetY;
+    targetCamY = st.y - getCameraOffsetY();
     if (newZoom !== null) {
       targetZoom = getResponsiveZoom(newZoom);
     }
@@ -396,7 +416,7 @@ window.KT = window.KT || {};
         clearTimeout(safetyTimer);
         markerEl.setAttribute('transform', `translate(${toSt.x}, ${toSt.y})`);
         targetCamX = toSt.x;
-        targetCamY = toSt.y - 10;
+        targetCamY = toSt.y - getCameraOffsetY();
         requestCameraUpdate();
         resolve();
       };
@@ -415,7 +435,7 @@ window.KT = window.KT || {};
         markerEl.setAttribute('transform', `translate(${curX.toFixed(1)}, ${(curY + hopY).toFixed(1)})`);
 
         targetCamX = curX;
-        targetCamY = curY - 10;
+        targetCamY = curY - getCameraOffsetY();
         requestCameraUpdate();
 
         if (t < 1) {

@@ -696,6 +696,7 @@ window.KT = window.KT || {};
       if (guideBar) guideBar.classList.add('hidden');
     }
 
+    KT.mapRenderer.focusOnStation(player.stationId);
     updateAllUI();
     await delay(220);
     await handleStationArrival(player);

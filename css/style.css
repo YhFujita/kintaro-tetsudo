@@ -29,6 +29,8 @@
 }
 
 html, body {
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100%;
   height: 100dvh;
@@ -36,7 +38,7 @@ html, body {
   font-family: "BIZ UDPGothic", "Hiragino Maru Gothic ProN", "Rounded Mplus 1c", "Meiryo", sans-serif;
   background: var(--ocean-deep);
   color: var(--text-main);
-  touch-action: manipulation;
+  touch-action: none;
   overscroll-behavior: none;
 }
 
@@ -1356,25 +1358,51 @@ body.moving-phase .bottom-hud {
     line-height: 1.38;
   }
 
-  /* コマンドバー：スマホ縦向きで親指タップしやすい配置 */
+  /* コマンドバー：スマホ縦向きで親指タップしやすい配置（スリム手番バッジ＋横1行ボタン群） */
   #command-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .cmd-turn-badge {
+    padding: 3px 12px;
+    font-size: 0.85rem;
+    border-width: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  .cmd-buttons-group {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr 1fr;
+    grid-template-columns: 1.35fr 1fr 1fr 1fr;
     gap: 4px;
     width: 100%;
   }
 
   .cmd-btn {
-    padding: 9px 2px;
-    font-size: 0.84rem;
-    border-width: 2.5px;
+    padding: 8px 1px;
+    font-size: 0.82rem;
+    border-width: 2px;
     border-radius: 12px;
     box-shadow: 0 3px 0 var(--border-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .cmd-btn ruby rt {
+    font-size: 0.48em;
   }
 
   .cmd-dice {
-    font-size: 0.96rem;
-    padding: 9px 4px;
+    font-size: 0.95rem;
+    padding: 8px 2px;
   }
 
   /* 移動中フローティングピル（スマホ縦画面） */
@@ -1583,13 +1611,31 @@ body.moving-phase .bottom-hud {
   }
 
   #command-bar {
-    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 3px;
+  }
+
+  .cmd-turn-badge {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+  }
+
+  .cmd-buttons-group {
+    grid-template-columns: 1.25fr 1fr 1fr 1fr;
+    gap: 3px;
+    width: 100%;
+  }
+
+  .cmd-btn {
+    font-size: 0.75rem;
+    padding: 6px 1px;
+    border-radius: 10px;
+    box-shadow: 0 2px 0 var(--border-dark);
   }
 
   .cmd-dice {
-    grid-column: span 2;
-    font-size: 1.05rem;
-    padding: 10px;
+    font-size: 0.88rem;
+    padding: 6px 1px;
   }
 
   .player-card-hud {

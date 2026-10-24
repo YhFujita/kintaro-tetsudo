@@ -1868,8 +1868,8 @@ window.KT = window.KT || {};
       e.currentTarget.innerHTML = `<span class="btn-icon">${muted ? '🔇' : '🔊'}</span><span class="btn-text"> 音: ${muted ? 'OFF' : 'ON'}</span>`;
     });
 
-    document.getElementById('btn-zoom-in')?.addEventListener('click', () => KT.mapRenderer.adjustZoom(1.22));
-    document.getElementById('btn-zoom-out')?.addEventListener('click', () => KT.mapRenderer.adjustZoom(0.82));
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => KT.mapRenderer.stepZoom(1));
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => KT.mapRenderer.stepZoom(-1));
     document.getElementById('btn-focus-all')?.addEventListener('click', () => {
       const allZoom = window.innerWidth <= 600 ? 0.28 : 0.36;
       KT.mapRenderer.focusOnStation('gifu', allZoom);

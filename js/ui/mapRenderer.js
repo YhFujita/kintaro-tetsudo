@@ -242,6 +242,13 @@ window.KT = window.KT || {};
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // 扱いやすい段階的ズーム倍率（全国全体・広域・標準・近景・最大拡大の5段階）
+  const BASE_ZOOM_LEVELS = [0.36, 0.58, 0.88, 1.16, 1.48];
+
+  function getZoomLevels() {
+    return BASE_ZOOM_LEVELS.map(z => Number(getResponsiveZoom(z).toFixed(2)));
+  }
+
   function getResponsiveZoom(baseZoom) {
     if (window.innerWidth <= 480) {
       return Math.max(0.32, baseZoom * 0.85);
@@ -270,7 +277,7 @@ window.KT = window.KT || {};
       if (activePointers.size === 1) {
         const now = performance.now();
         if (now - lastTapTime < 320) {
-          adjustZoom(1.3);
+          stepZoom(1);
           lastTapTime = 0;
         } else {
           lastTapTime = now;
@@ -347,11 +354,31 @@ window.KT = window.KT || {};
     viewport.addEventListener('pointerup', handlePointerUpOrCancel);
     viewport.addEventListener('pointercancel', handlePointerUpOrCancel);
 
+    let lastWheelStepTime = 0;
+    let wheelDeltaAccum = 0;
+    let wheelClearTimer = null;
+
     viewport.addEventListener('wheel', e => {
       e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.15 : 0.87;
-      targetZoom = Math.max(0.30, Math.min(1.80, targetZoom * factor));
-      requestCameraUpdate();
+      const now = performance.now();
+      wheelDeltaAccum += e.deltaY;
+
+      // ホイールが止まったら200ms後に累積値をリセット
+      if (wheelClearTimer) clearTimeout(wheelClearTimer);
+      wheelClearTimer = setTimeout(() => {
+        wheelDeltaAccum = 0;
+      }, 200);
+
+      // 前回の段階変更から160ms以上経過し、かつ一定の回転量（絶対値24以上）に達したら1段階変更
+      if (now - lastWheelStepTime >= 160 && Math.abs(wheelDeltaAccum) >= 24) {
+        if (wheelDeltaAccum < 0) {
+          stepZoom(1);  // 上回転：1段階拡大
+        } else {
+          stepZoom(-1); // 下回転：1段階縮小
+        }
+        wheelDeltaAccum = 0;
+        lastWheelStepTime = now;
+      }
     }, { passive: false });
   }
 
@@ -374,9 +401,49 @@ window.KT = window.KT || {};
     }
   }
 
-  function adjustZoom(deltaFactor) {
-    targetZoom = Math.max(0.30, Math.min(1.80, targetZoom * deltaFactor));
+  /**
+   * 段階的ズーム制御（direction: 1 = 拡大, -1 = 縮小）
+   * 5段階のズームレベル（全国〜広域〜標準〜近景〜最大）へ1段階ずつ確実に止まります。
+   */
+  function stepZoom(direction) {
+    const levels = getZoomLevels();
+    let closestIdx = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < levels.length; i++) {
+      const dist = Math.abs(levels[i] - targetZoom);
+      if (dist < minDist) {
+        minDist = dist;
+        closestIdx = i;
+      }
+    }
+
+    let nextIdx = closestIdx;
+    if (direction > 0) {
+      if (targetZoom < levels[closestIdx] - 0.04) {
+        nextIdx = closestIdx;
+      } else {
+        nextIdx = Math.min(levels.length - 1, closestIdx + 1);
+      }
+    } else if (direction < 0) {
+      if (targetZoom > levels[closestIdx] + 0.04) {
+        nextIdx = closestIdx;
+      } else {
+        nextIdx = Math.max(0, closestIdx - 1);
+      }
+    }
+
+    targetZoom = levels[nextIdx];
     requestCameraUpdate();
+  }
+
+  function adjustZoom(deltaOrFactor) {
+    if (deltaOrFactor === 1 || deltaOrFactor > 1) {
+      stepZoom(1);
+    } else if (deltaOrFactor === -1 || (deltaOrFactor > 0 && deltaOrFactor < 1)) {
+      stepZoom(-1);
+    } else {
+      stepZoom(deltaOrFactor);
+    }
   }
 
   function setHighlightedBranches(stationIds = [], backStationId = null, remainingSteps = null) {
@@ -712,6 +779,7 @@ window.KT = window.KT || {};
     renderMap,
     focusOnStation,
     adjustZoom,
+    stepZoom,
     setHighlightedBranches,
     animateTrainStep
   };

@@ -47,7 +47,7 @@ window.KT = window.KT || {};
     clearKeyHandler();
     const { overlay, windowEl } = getModalElements();
     if (!overlay || !windowEl) return;
-    windowEl.innerHTML = htmlContent;
+    windowEl.innerHTML = KT.ruby(htmlContent);
     overlay.classList.remove('hidden');
   }
 
@@ -384,7 +384,7 @@ window.KT = window.KT || {};
                 <div class="prop-desc">${KT.ruby(prop.desc)}</div>
               </div>
               <div class="prop-meta">
-                <span style="font-size:1.1rem;">${KT.formatMoney(effectivePrice, false)}</span>
+                <span style="font-size:1.1rem;">${KT.formatMoney(effectivePrice, true)}</span>
                 <span class="prop-rate-badge">収益 ${prop.rate}%</span>
                 ${actionHtml}
               </div>
@@ -405,13 +405,13 @@ window.KT = window.KT || {};
           ` : ''}
           <div style="display:flex; justify-content:space-between; align-items:center; background:#e3f2fd; border:3px solid #1e88e5; border-radius:14px; padding:10px 18px; font-weight:900; font-size:1.15rem;">
             <span>💼 ${player.name} の 持ち金</span>
-            <span style="color:#d50000; font-size:1.35rem;">${KT.formatMoney(player.money, false)}</span>
+            <span style="color:#d50000; font-size:1.35rem;">${KT.formatMoney(player.money, true)}</span>
           </div>
           <div class="prop-list">${rowsHtml}</div>
           <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;">
             ${canBuyAll ? `
               <button id="prop-buy-all-btn" class="btn-jumbo btn-start" style="background:linear-gradient(180deg,#ffca28,#f57f17); color:#212121; padding:10px 26px;">
-                👑 ぜんぶまとめて買う！（${KT.formatMoney(unownedTotal, false)}）
+                👑 ぜんぶまとめて買う！（${KT.formatMoney(unownedTotal, true)}）
               </button>
             ` : ''}
             <button id="prop-shop-close" class="btn-jumbo btn-continue" style="padding:10px 34px;">
@@ -607,7 +607,7 @@ window.KT = window.KT || {};
                 <div class="c-desc">${KT.ruby(c.desc)}</div>
               </div>
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:900; color:#d50000;">${KT.formatMoney(c.price, false)}</span>
+                <span style="font-weight:900; color:#d50000;">${KT.formatMoney(c.price, true)}</span>
                 <button class="buy-card-btn btn-jumbo btn-start" data-id="${c.id}"
                         style="padding:5px 16px; font-size:0.9rem; ${canBuy ? '' : 'opacity:0.35; pointer-events:none;'}">
                   買う
@@ -620,7 +620,7 @@ window.KT = window.KT || {};
         openModal(`
           <div class="modal-header gold">🛒 ${station.name} カードうりば</div>
           <div style="display:flex; justify-content:space-between; background:#fff8e1; border:3px solid #ffa000; border-radius:12px; padding:10px 18px; font-weight:900; font-size:1.1rem;">
-            <span>💼 持ち金：${KT.formatMoney(player.money, false)}</span>
+            <span>💼 持ち金：${KT.formatMoney(player.money, true)}</span>
             <span>🃏 手持ちカード：${player.cards.length} / 8枚</span>
           </div>
           <div class="card-grid">${listHtml}</div>
@@ -673,10 +673,10 @@ window.KT = window.KT || {};
               </div>
               <div style="text-align:right;">
                 <div style="color:#2e7d32; font-size:0.95rem;">
-                  今年の物件収益：＋${KT.formatMoney(item.revenue, false)}
+                  今年の物件収益：＋${KT.formatMoney(item.revenue, true)}
                 </div>
                 <div style="font-size:1.25rem; color:#d50000;">
-                  総資産：${KT.formatMoney(item.totalAssets, false)}
+                  総資産：${KT.formatMoney(item.totalAssets, true)}
                 </div>
               </div>
             </div>
@@ -739,7 +739,7 @@ window.KT = window.KT || {};
                   <div class="prop-desc">${KT.ruby(p.desc)}</div>
                 </div>
                 <div class="prop-meta">
-                  <span>${KT.formatMoney(p.price, false)}</span>
+                  <span>${KT.formatMoney(p.price, true)}</span>
                   <span class="prop-rate-badge">収益 ${p.rate}%</span>
                   <span style="padding:4px 10px; border-radius:8px; background:${owner ? owner.color : '#cfd8dc'}; color:${owner ? '#fff' : '#37474f'};">
                     ${owner ? owner.name : '未購入'}
@@ -822,6 +822,55 @@ window.KT = window.KT || {};
     });
   }
 
+  /**
+   * 人間プレイヤー交代・ターン開始告知モーダル
+   * 人間が複数人いるマルチプレイ時に端末交代をスムーズに促す
+   */
+  function showTurnNoticeModal(player, playerIndex, goalStation, distToGoal) {
+    return new Promise(resolve => {
+      const colorClasses = ['p-red', 'p-blue', 'p-yellow', 'p-green'];
+      const slotColorClass = colorClasses[playerIndex % 4] || 'p-red';
+      const slotLabels = ['🔴 1P', '🔵 2P', '🟡 3P', '🟢 4P'];
+      const slotLabel = slotLabels[playerIndex % 4] || `${playerIndex + 1}P`;
+
+      openModal(`
+        <div class="turn-notice-card">
+          <div class="turn-notice-banner ${slotColorClass}">
+            <span>${slotLabel}</span>
+            <span>${player.name} の番です！</span>
+          </div>
+          <div class="turn-notice-avatar">
+            ${KT.svg.getCharacterSVG(player.avatar, 'happy', 96)}
+          </div>
+          <div class="turn-notice-instruction">
+            📱 端末（コントローラー）を交代してください！<br>
+            準備ができたら <strong>［スタート！］</strong> を押してね！
+          </div>
+          <div class="turn-notice-status-row">
+            <div>💼 持ち金：<strong style="color:#d50000;">${KT.formatMoney(player.money, true)}</strong></div>
+            <div>🏁 目的地まで：<strong>あと ${distToGoal} マス</strong></div>
+            <div>🃏 カード：<strong>${player.cards.length} 枚</strong></div>
+          </div>
+          <button id="turn-notice-start-btn" class="btn-jumbo btn-start" style="padding:12px 42px; font-size:1.3rem;">
+            🎲 交代完了！サイコロをふる！（Space / Enter）
+          </button>
+        </div>
+      `);
+
+      let started = false;
+      const finish = () => {
+        if (started) return;
+        started = true;
+        KT.audio.SE.click();
+        closeModal();
+        resolve();
+      };
+
+      document.getElementById('turn-notice-start-btn')?.addEventListener('click', finish);
+      bindConfirmKeys(finish);
+    });
+  }
+
   KT.dialogs = {
     openModal,
     closeModal,
@@ -838,6 +887,7 @@ window.KT = window.KT || {};
     showCardShopModal,
     showAnnualSettlementModal,
     showStationInspectorModal,
-    showBinboQuizModal
+    showBinboQuizModal,
+    showTurnNoticeModal
   };
 })();

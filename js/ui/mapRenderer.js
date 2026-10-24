@@ -170,18 +170,19 @@ window.KT = window.KT || {};
 
     // 地方名プレート
     const regionBanners = [
-      { label: '北海道エリア', x: 3450, y: 60, color: '#2e7d32' },
-      { label: '東北エリア', x: 3720, y: 1240, color: '#00838f' },
-      { label: '関東エリア', x: 3720, y: 2015, color: '#1565c0' },
-      { label: '中部・北陸エリア', x: 2300, y: 1400, color: '#283593' },
-      { label: '近畿エリア', x: 2070, y: 2630, color: '#6a1b9a' },
-      { label: '中国・四国エリア', x: 1150, y: 1850, color: '#ef6c00' },
-      { label: '九州・沖縄エリア', x: 460, y: 2160, color: '#c62828' }
+      { label: '北海道エリア', kana: 'ほっかいどう', x: 3450, y: 60, color: '#2e7d32' },
+      { label: '東北エリア', kana: 'とうほく', x: 3720, y: 1240, color: '#00838f' },
+      { label: '関東エリア', kana: 'かんとう', x: 3720, y: 2015, color: '#1565c0' },
+      { label: '中部・北陸エリア', kana: 'ちゅうぶ・ほくりく', x: 2300, y: 1400, color: '#283593' },
+      { label: '近畿エリア', kana: 'きんき', x: 2070, y: 2630, color: '#6a1b9a' },
+      { label: '中国・四国エリア', kana: 'ちゅうごく・しこく', x: 1150, y: 1850, color: '#ef6c00' },
+      { label: '九州・沖縄エリア', kana: 'きゅうしゅう・おきなわ', x: 460, y: 2160, color: '#c62828' }
     ].map(b => `
       <g transform="translate(${b.x}, ${b.y})" opacity="0.92">
-        <rect x="-95" y="-18" width="190" height="36" rx="18" fill="#1b2a32" opacity="0.4"/>
-        <rect x="-95" y="-22" width="190" height="36" rx="18" fill="${b.color}" stroke="#fff" stroke-width="3"/>
-        <text x="0" y="3" font-size="16" font-weight="900" fill="#fff" text-anchor="middle">${b.label}</text>
+        <rect x="-95" y="-18" width="190" height="42" rx="18" fill="#1b2a32" opacity="0.4"/>
+        <rect x="-95" y="-22" width="190" height="42" rx="18" fill="${b.color}" stroke="#fff" stroke-width="3"/>
+        <text x="0" y="-8" font-size="9" font-weight="900" fill="#ffeb3b" text-anchor="middle">${b.kana}</text>
+        <text x="0" y="11" font-size="15" font-weight="900" fill="#fff" text-anchor="middle">${b.label}</text>
       </g>
     `).join('');
 
@@ -505,13 +506,19 @@ window.KT = window.KT || {};
         const ringStroke = isCurrentHere ? '#ff1744' : isBranchChoice ? '#00e676' : cfg.stroke;
         const ringW = (isCurrentHere || isBranchChoice) ? 6 : 4;
 
+        const maxTxtLen = Math.max(st.name.length, (st.kana || '').length);
+        const badgeW = Math.max(76, maxTxtLen * 13 + 14);
+        const hasKana = !!st.kana && st.kana !== st.name;
+        const badgeH = hasKana ? 28 : 18;
+
         tileSvg = `
           <circle cx="0" cy="4" r="22" fill="#212121" opacity="0.28"/>
           <circle cx="0" cy="0" r="22" fill="${cfg.fill}" stroke="${ringStroke}" stroke-width="${ringW}"/>
           <ellipse cx="-6" cy="-8" rx="8" ry="4" fill="rgba(255,255,255,0.35)" transform="rotate(-25 -6 -8)"/>
           <text x="0" y="7" font-size="19" font-weight="900" fill="${cfg.textCol}" text-anchor="middle">${cfg.text}</text>
-          <rect x="-40" y="25" width="80" height="17" rx="8" fill="rgba(38,50,56,0.88)"/>
-          <text x="0" y="37" font-size="10.5" font-weight="800" fill="#fff" text-anchor="middle">${st.name}</text>
+          <rect x="${-badgeW / 2}" y="24" width="${badgeW}" height="${badgeH}" rx="8" fill="rgba(38,50,56,0.92)"/>
+          ${hasKana ? `<text x="0" y="34.5" font-size="8.5" font-weight="900" fill="#ffd54f" text-anchor="middle">${st.kana}</text>` : ''}
+          <text x="0" y="${hasKana ? 48 : 37}" font-size="10.5" font-weight="800" fill="#fff" text-anchor="middle">${st.name}</text>
         `;
       }
 
@@ -548,8 +555,9 @@ window.KT = window.KT || {};
         stopButtonSvg = `
           <g transform="translate(0, -82)" class="stop-confirm-badge" style="cursor:pointer;">
             <circle cx="0" cy="0" r="32" fill="#d50000" stroke="#ffeb3b" stroke-width="4"/>
-            <text x="0" y="-4" font-size="18" font-weight="900" fill="#fff" text-anchor="middle">⭕</text>
-            <text x="0" y="14" font-size="11.5" font-weight="900" fill="#ffeb3b" text-anchor="middle">止まる</text>
+            <text x="0" y="-8" font-size="18" font-weight="900" fill="#fff" text-anchor="middle">⭕</text>
+            <text x="0" y="8" font-size="8" font-weight="900" fill="#ffffff" text-anchor="middle">と</text>
+            <text x="0" y="19" font-size="11.5" font-weight="900" fill="#ffeb3b" text-anchor="middle">止まる</text>
           </g>
         `;
       }

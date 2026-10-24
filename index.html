@@ -24,21 +24,33 @@
         <div id="title-chars-preview" style="display:flex; gap:8px; align-items:center;"></div>
         <div class="title-logo-text">
           <h1 data-ruby>🚂 きんたろうてつどう</h1>
-          <div class="subtitle">全国47都道府県 わくわくアトラクション＆名産品めぐり！</div>
+          <div class="subtitle"><ruby>全国<rt>ぜんこく</rt></ruby>47<ruby>都道府県<rt>とどうふけん</rt></ruby> わくわくアトラクション＆<ruby>名産品めぐり<rt>めいさんひんめぐり</rt></ruby>！</div>
         </div>
       </div>
 
       <p style="font-weight:900; font-size:1.05rem; color:#37474f; margin-bottom:10px;" data-ruby>
-        家族や友達と1人〜4人で遊べる！全国のテーマパークや牧場・水族館・おいしい名産品を買って日本一の社長を目指そう！
+        <ruby>家族<rt>かぞく</rt></ruby>や<ruby>友達<rt>ともだち</rt></ruby>と1<ruby>人<rt>にん</rt></ruby>〜<ruby>最大<rt>さいだい</rt></ruby>4<ruby>人<rt>にん</rt></ruby>で<ruby>遊べる<rt>あそべる</rt></ruby>！<ruby>全国<rt>ぜんこく</rt></ruby>の<ruby>テーマパーク<rt>てーまぱーく</rt></ruby>や<ruby>牧場<rt>ぼくじょう</rt></ruby>・<ruby>水族館<rt>すいぞくかん</rt></ruby>・おいしい<ruby>名産品<rt>めいさんひん</rt></ruby>を<ruby>買<rt>か</rt></ruby>って<ruby>日本<rt>にほん</rt></ruby><ruby>一<rt>いち</rt></ruby>の<ruby>社長<rt>しゃちょう</rt></ruby>を<ruby>目指そう<rt>めざそう</rt></ruby>！
       </p>
+
+      <!-- 人間プレイヤー人数のクイック選択バー -->
+      <div class="human-count-selector">
+        <span class="count-selector-label">🎮 にんげんで<ruby>遊ぶ人数<rt>あそぶにんずう</rt></ruby>：</span>
+        <div class="count-btn-group">
+          <button type="button" class="btn-count-preset active" data-humans="1">👤 1<ruby>人<rt>にん</rt></ruby>プレイ</button>
+          <button type="button" class="btn-count-preset" data-humans="2">👥 2<ruby>人<rt>にん</rt></ruby><ruby>対戦<rt>たいせん</rt></ruby></button>
+          <button type="button" class="btn-count-preset" data-humans="3">👥👤 3<ruby>人<rt>にん</rt></ruby><ruby>対戦<rt>たいせん</rt></ruby></button>
+          <button type="button" class="btn-count-preset" data-humans="4">👥👥 4<ruby>人<rt>にん</rt></ruby><ruby>対戦<rt>たいせん</rt></ruby></button>
+        </div>
+      </div>
 
       <!-- 4人分のプレイヤー・CPU設定 -->
       <div class="setup-grid">
         <div class="player-setup-box" data-slot="0">
-          <div style="font-weight:900; color:#d50000;">🔴 1P（赤の列車）</div>
-          <input id="p-name-0" type="text" value="きんたろう社長" maxlength="10" />
+          <div class="slot-header" style="font-weight:900; color:#d50000;">🔴 1P（<ruby>赤の列車<rt>あかのれっしゃ</rt></ruby>）</div>
+          <div id="p-avatar-preview-0" class="player-avatar-preview"></div>
+          <input id="p-name-0" type="text" value="きんたろう社長" maxlength="10" placeholder="なまえを入力（にゅうりょく）" />
           <select id="p-type-0">
-            <option value="human">👤 にんげん（自分で操作）</option>
+            <option value="human" selected>👤 にんげん（自分（じぶん）で操作（そうさ））</option>
             <option value="cpu_easy">👹 CPU：まめオニ（やさしい）</option>
             <option value="cpu_normal">👹 CPU：あかオニ（ふつう）</option>
             <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
@@ -46,37 +58,41 @@
         </div>
 
         <div class="player-setup-box" data-slot="1">
-          <div style="font-weight:900; color:#1565c0;">🔵 2P（青の列車）</div>
-          <input id="p-name-1" type="text" value="まめオニ社長" maxlength="10" />
+          <div class="slot-header" style="font-weight:900; color:#1565c0;">🔵 2P（<ruby>青の列車<rt>あおのれっしゃ</rt></ruby>）</div>
+          <div id="p-avatar-preview-1" class="player-avatar-preview"></div>
+          <input id="p-name-1" type="text" value="まめオニ社長" maxlength="10" placeholder="なまえを入力（にゅうりょく）" />
           <select id="p-type-1">
-            <option value="human">👤 にんげん（みんなで対戦）</option>
+            <option value="human">👤 にんげん（自分（じぶん）で操作（そうさ））</option>
             <option value="cpu_easy" selected>👹 CPU：まめオニ（やさしい）</option>
             <option value="cpu_normal">👹 CPU：あかオニ（ふつう）</option>
             <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
+            <option value="none">❌ 参加（さんか）しない</option>
           </select>
         </div>
 
         <div class="player-setup-box" data-slot="2">
-          <div style="font-weight:900; color:#f57f17;">🟡 3P（黄の列車）</div>
-          <input id="p-name-2" type="text" value="あかオニ社長" maxlength="10" />
+          <div class="slot-header" style="font-weight:900; color:#f57f17;">🟡 3P（<ruby>黄の列車<rt>きのれっしゃ</rt></ruby>）</div>
+          <div id="p-avatar-preview-2" class="player-avatar-preview"></div>
+          <input id="p-name-2" type="text" value="あかオニ社長" maxlength="10" placeholder="なまえを入力（にゅうりょく）" />
           <select id="p-type-2">
-            <option value="human">👤 にんげん（みんなで対戦）</option>
+            <option value="human">👤 にんげん（自分（じぶん）で操作（そうさ））</option>
             <option value="cpu_easy">👹 CPU：まめオニ（やさしい）</option>
             <option value="cpu_normal" selected>👹 CPU：あかオニ（ふつう）</option>
             <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
-            <option value="none">❌ 参加しない</option>
+            <option value="none">❌ 参加（さんか）しない</option>
           </select>
         </div>
 
         <div class="player-setup-box" data-slot="3">
-          <div style="font-weight:900; color:#2e7d32;">🟢 4P（緑の列車）</div>
-          <input id="p-name-3" type="text" value="メカオニ社長" maxlength="10" />
+          <div class="slot-header" style="font-weight:900; color:#2e7d32;">🟢 4P（<ruby>緑の列車<rt>みどりのれっしゃ</rt></ruby>）</div>
+          <div id="p-avatar-preview-3" class="player-avatar-preview"></div>
+          <input id="p-name-3" type="text" value="メカオニ社長" maxlength="10" placeholder="なまえを入力（にゅうりょく）" />
           <select id="p-type-3">
-            <option value="human">👤 にんげん（みんなで対戦）</option>
+            <option value="human">👤 にんげん（自分（じぶん）で操作（そうさ））</option>
             <option value="cpu_easy">👹 CPU：まめオニ（やさしい）</option>
             <option value="cpu_normal">👹 CPU：あかオニ（ふつう）</option>
             <option value="cpu_hard">🤖 CPU：メカオニ（つよい）</option>
-            <option value="none" selected>❌ 参加しない</option>
+            <option value="none" selected>❌ 参加（さんか）しない</option>
           </select>
         </div>
       </div>
@@ -84,22 +100,22 @@
       <!-- プレイ年数設定 -->
       <div class="setup-options-row">
         <label for="setup-years">
-          📅 あそぶ年数（3月の決算回数）：
+          📅 <ruby>あそぶ年数<rt>あそぶねんすう</rt></ruby>（3<ruby>月<rt>がつ</rt></ruby>の<ruby>決算回数<rt>けっさんかいすう</rt></ruby>）：
           <select id="setup-years">
-            <option value="3" selected>3年コース（サクッと楽しい！おすすめ）</option>
-            <option value="5">5年コース（じっくり全国めぐり）</option>
-            <option value="10">10年コース（たっぷり大逆転バトル）</option>
-            <option value="20">20年コース（全国制覇ロングラン！）</option>
+            <option value="3" selected>3年（ねん）コース（サクッと楽（たの）しい！おすすめ）</option>
+            <option value="5">5年（ねん）コース（じっくり全国（ぜんこく）めぐり）</option>
+            <option value="10">10年（ねん）コース（たっぷり大逆転（だいぎゃくてん）バトル）</option>
+            <option value="20">20年（ねん）コース（全国制覇（ぜんこくせいは）ロングラン！）</option>
           </select>
         </label>
       </div>
 
       <div class="title-actions">
         <button id="btn-start-game" class="btn-jumbo btn-start">
-          🚂 出発進行！（あたらしく始める）
+          🚂 <ruby>出発進行<rt>しゅっぱつしんこう</rt></ruby>！（<ruby>あたらしく始める<rt>あたらしくはじめる</rt></ruby>）
         </button>
         <button id="btn-continue-game" class="btn-jumbo btn-continue" style="display:none;">
-          📂 つづきから遊ぶ
+          📂 <ruby>つづきから遊ぶ<rt>つづきからあそぶ</rt></ruby>
         </button>
       </div>
     </div>
@@ -118,19 +134,19 @@
         <div class="top-left-group">
           <div class="date-badge">
             <span id="hud-season-icon" class="season-icon">🌸</span>
-            <span id="hud-date-text">1年目 4月</span>
+            <span id="hud-date-text">1<ruby>年目<rt>ねんめ</rt></ruby> 4<ruby>月<rt>がつ</rt></ruby></span>
           </div>
 
           <div id="hud-goal-banner" class="goal-banner" title="クリックで目的地を表示">
-            <span id="hud-goal-text">🏁 目的地：決定中</span>
-            <span id="hud-goal-dist" class="goal-dist-pill">あと 0 マス</span>
+            <span id="hud-goal-text">🏁 <ruby>目的地<rt>もくてきち</rt></ruby>：<ruby>決定中<rt>けっていちゅう</rt></ruby></span>
+            <span id="hud-goal-dist" class="goal-dist-pill">あと 0 <ruby>マス<rt>ます</rt></ruby></span>
           </div>
         </div>
 
         <div class="top-Quick-btns">
-          <button id="btn-toggle-speed" class="hud-icon-btn" title="ゲーム速度の切り替え"><span class="btn-icon">⏩</span><span class="btn-text"> 速度: ふつう</span></button>
+          <button id="btn-toggle-speed" class="hud-icon-btn" title="ゲーム速度の切り替え"><span class="btn-icon">⏩</span><span class="btn-text"> <ruby>速度<rt>そくど</rt></ruby>: ふつう</span></button>
           <button id="btn-toggle-ruby" class="hud-icon-btn" title="フリガナ（ルビ）表示の切り替え"><span class="btn-icon">🔤</span><span class="btn-text"> フリガナ: ON</span></button>
-          <button id="btn-toggle-sound" class="hud-icon-btn" title="BGM・効果音の切り替え"><span class="btn-icon">🔊</span><span class="btn-text"> 音: ON</span></button>
+          <button id="btn-toggle-sound" class="hud-icon-btn" title="BGM・効果音の切り替え"><span class="btn-icon">🔊</span><span class="btn-text"> <ruby>音<rt>おと</rt></ruby>: ON</span></button>
         </div>
       </header>
 
@@ -140,11 +156,11 @@
 
     <!-- 右サイド：マップズーム・現在地・目的地・日本全体表示 -->
     <aside class="map-zoom-controls">
-      <button id="btn-zoom-in" class="hud-icon-btn zoom-btn" title="拡大"><span class="btn-icon">➕</span><span class="btn-text"> 拡大</span></button>
-      <button id="btn-zoom-out" class="hud-icon-btn zoom-btn" title="縮小"><span class="btn-icon">➖</span><span class="btn-text"> 縮小</span></button>
-      <button id="btn-focus-all" class="hud-icon-btn zoom-btn" title="全国全体"><span class="btn-icon">🗾</span><span class="btn-text"> 全国全体</span></button>
-      <button id="btn-focus-me" class="hud-icon-btn zoom-btn" title="現在地へ"><span class="btn-icon">🚂</span><span class="btn-text"> 現在地へ</span></button>
-      <button id="btn-focus-goal" class="hud-icon-btn zoom-btn" title="目的地へ"><span class="btn-icon">🏁</span><span class="btn-text"> 目的地へ</span></button>
+      <button id="btn-zoom-in" class="hud-icon-btn zoom-btn" title="拡大"><span class="btn-icon">➕</span><span class="btn-text"> <ruby>拡大<rt>かくだい</rt></ruby></span></button>
+      <button id="btn-zoom-out" class="hud-icon-btn zoom-btn" title="縮小"><span class="btn-icon">➖</span><span class="btn-text"> <ruby>縮小<rt>しゅくしょう</rt></ruby></span></button>
+      <button id="btn-focus-all" class="hud-icon-btn zoom-btn" title="全国全体"><span class="btn-icon">🗾</span><span class="btn-text"> <ruby>全国全体<rt>ぜんこくぜんたい</rt></ruby></span></button>
+      <button id="btn-focus-me" class="hud-icon-btn zoom-btn" title="現在地へ"><span class="btn-icon">🚂</span><span class="btn-text"> <ruby>現在地へ<rt>げんざいちへ</rt></ruby></span></button>
+      <button id="btn-focus-goal" class="hud-icon-btn zoom-btn" title="目的地へ"><span class="btn-icon">🏁</span><span class="btn-text"> <ruby>目的地へ<rt>もくてきちへ</rt></ruby></span></button>
     </aside>
 
     <!-- 移動操作フローティングピル（移動フェーズ中にマップ上部に超スリム表示） -->
@@ -156,7 +172,7 @@
             🌟 おまかせ<span class="btn-key-hint">（Space）</span>
           </button>
           <button id="btn-step-back" class="btn-step-back" title="来た道を1マス戻って歩数を回復します">
-            ↩️ 1マスもどる<span class="btn-key-hint">（BackSpace）</span>
+            ↩️ 1<ruby>マス<rt>ます</rt></ruby><ruby>もどる<rt>もどる</rt></ruby><span class="btn-key-hint">（BackSpace）</span>
           </button>
         </div>
       </div>
@@ -170,15 +186,21 @@
         <div id="message-box">
           <div id="message-speaker-avatar"></div>
           <div id="message-content" data-ruby>
-            「きんたろうてつどう」へようこそ！サイコロをふって全国の目的地を目指そう！
+            「きんたろうてつどう」へようこそ！サイコロをふって<ruby>全国<rt>ぜんこく</rt></ruby>の<ruby>目的地<rt>もくてきち</rt></ruby>を<ruby>目指そう<rt>めざそう</rt></ruby>！
           </div>
         </div>
 
         <div id="command-bar" class="hidden">
-          <button id="cmd-btn-dice" class="cmd-btn cmd-dice">🎲 さいころ</button>
-          <button id="cmd-btn-card" class="cmd-btn cmd-card">🃏 カード</button>
-          <button id="cmd-btn-map" class="cmd-btn cmd-map">🗾 全国図鑑</button>
-          <button id="cmd-btn-info" class="cmd-btn cmd-info">📊 会社情報</button>
+          <div id="cmd-turn-badge" class="cmd-turn-badge">
+            <span id="cmd-turn-icon" class="cmd-turn-icon">🔴</span>
+            <span id="cmd-turn-title">1P きんたろう<ruby>社長<rt>しゃちょう</rt></ruby> の<ruby>番<rt>ばん</rt></ruby>！</span>
+          </div>
+          <div class="cmd-buttons-group">
+            <button id="cmd-btn-dice" class="cmd-btn cmd-dice">🎲 さいころ</button>
+            <button id="cmd-btn-card" class="cmd-btn cmd-card">🃏 カード</button>
+            <button id="cmd-btn-map" class="cmd-btn cmd-map">🗾 <ruby>全国図鑑<rt>ぜんこくずかん</rt></ruby></button>
+            <button id="cmd-btn-info" class="cmd-btn cmd-info">📊 <ruby>会社情報<rt>かいしゃじょうほう</rt></ruby></button>
+          </div>
         </div>
       </div>
     </footer>

@@ -69,7 +69,7 @@ window.KT = window.KT || {};
     };
     const dateEl = document.getElementById('hud-date-text');
     const seasonEl = document.getElementById('hud-season-icon');
-    if (dateEl) dateEl.textContent = `${state.year}年目 ${state.month}月`;
+    if (dateEl) dateEl.innerHTML = KT.ruby(`${state.year}年目 ${state.month}月`);
     if (seasonEl) seasonEl.textContent = seasonMap[state.month] || '🌸';
 
     const goalSt = KT.STATION_MAP.get(state.goalStationId);
@@ -78,16 +78,35 @@ window.KT = window.KT || {};
     const goalTextEl = document.getElementById('hud-goal-text');
     const goalDistEl = document.getElementById('hud-goal-dist');
     if (goalTextEl && goalSt) {
-      goalTextEl.innerHTML = `🏁 目的地：【${goalSt.pref}】${goalSt.name}駅`;
+      goalTextEl.innerHTML = KT.ruby(`🏁 目的地：【${goalSt.pref}】${goalSt.name}駅`);
     }
     if (goalDistEl) {
-      goalDistEl.textContent = `あと ${dist} マス`;
+      goalDistEl.innerHTML = KT.ruby(`あと ${dist} マス`);
     }
 
     // カードボタンに所持枚数を表示
     const cardBtn = document.getElementById('cmd-btn-card');
     if (cardBtn && curPlayer) {
-      cardBtn.innerHTML = `🃏 カード(${curPlayer.cards.length})`;
+      cardBtn.innerHTML = KT.ruby(`🃏 カード(${curPlayer.cards.length})`);
+    }
+
+    // コマンドバー手番インジケーターの更新
+    const turnBadge = document.getElementById('cmd-turn-badge');
+    const turnTitle = document.getElementById('cmd-turn-title');
+    const turnIcon = document.getElementById('cmd-turn-icon');
+    if (turnBadge && curPlayer) {
+      const slotColors = ['p-red', 'p-blue', 'p-yellow', 'p-green'];
+      const slotIcons = ['🔴', '🔵', '🟡', '🟢'];
+      const slotIdx = (curPlayer.slotIndex !== undefined ? curPlayer.slotIndex : (curPlayer.id !== undefined ? curPlayer.id : state.currentPlayerIndex)) % 4;
+
+      turnBadge.className = `cmd-turn-badge ${slotColors[slotIdx] || 'p-red'}`;
+      if (turnIcon) turnIcon.textContent = slotIcons[slotIdx] || '🔴';
+      if (turnTitle) {
+        const pLabel = `${slotIdx + 1}P ${curPlayer.name}`;
+        turnTitle.innerHTML = curPlayer.isCpu
+          ? KT.ruby(`🤖 ${pLabel}（自動進行中）`)
+          : KT.ruby(`🎮 ${pLabel} の番！`);
+      }
     }
 
     // 4人の社長の横並びコンパクトスコアボード
@@ -102,17 +121,22 @@ window.KT = window.KT || {};
           ? (state.binboForm === 'king' ? '⚡大魔王' : state.binboForm === 'chibi' ? '🍼ちび神' : '🦆貧乏神')
           : '';
 
+        const slotNum = (p.slotIndex !== undefined ? p.slotIndex : idx) + 1;
+        const pBadge = p.isCpu
+          ? `<span style="background:#546e7a; color:#fff; font-size:0.72rem; padding:1px 5px; border-radius:6px; margin-right:4px;">CPU</span>`
+          : `<span style="background:${p.color}; color:#fff; font-size:0.72rem; padding:1px 5px; border-radius:6px; margin-right:4px;">${slotNum}P</span>`;
+
         return `
           <div class="player-card-hud ${isTurn ? 'active-turn' : ''}" data-pidx="${idx}" style="border-color:${p.color};">
             <div class="p-avatar">${KT.svg.getCharacterSVG(p.avatar, p.money < 0 ? 'sad' : 'happy', 38)}</div>
             <div class="p-info">
               <div class="p-name-row">
-                <span>${p.name}</span>
-                ${hasBinbo ? `<span class="binbo-tag ${state.binboForm === 'king' ? 'king' : ''}">${binboLabel}</span>` : ''}
+                <span>${pBadge}${KT.ruby(p.name)}</span>
+                ${hasBinbo ? `<span class="binbo-tag ${state.binboForm === 'king' ? 'king' : ''}">${KT.ruby(binboLabel)}</span>` : ''}
               </div>
               <div class="p-money-row">
-                <span class="p-money ${p.money < 0 ? 'negative' : ''}">${KT.formatMoney(p.money, false)}</span>
-                <span class="p-dist">📍${stName}(あと${pDist})</span>
+                <span class="p-money ${p.money < 0 ? 'negative' : ''}">${KT.formatMoney(p.money, true)}</span>
+                <span class="p-dist">📍${KT.ruby(stName)}(あと${pDist})</span>
               </div>
             </div>
           </div>
@@ -167,20 +191,24 @@ window.KT = window.KT || {};
    * 新規ゲーム開始
    */
   async function startNewGame(playersConfig, maxYears) {
-    const players = playersConfig.map((cfg, idx) => ({
-      id: idx,
-      name: cfg.name || `${idx + 1}P社長`,
-      isCpu: cfg.type !== 'human',
-      cpuLevel: cfg.type === 'cpu_easy' ? 'easy' : cfg.type === 'cpu_hard' ? 'hard' : 'normal',
-      color: PLAYER_COLORS[idx % 4],
-      avatar: cfg.avatar || PLAYER_AVATARS[idx % 4],
-      stationId: 'tokyo',
-      money: 1000,
-      cards: [KT.getCardById('kyuko'), KT.getCardById('special')].filter(Boolean),
-      ushipoTurns: 0,
-      sealedTurns: 0,
-      goalCount: 0
-    }));
+    const players = playersConfig.map((cfg, idx) => {
+      const slot = cfg.slotIndex !== undefined ? cfg.slotIndex : idx;
+      return {
+        id: idx,
+        slotIndex: slot,
+        name: cfg.name || `${slot + 1}P社長`,
+        isCpu: cfg.type !== 'human',
+        cpuLevel: cfg.type === 'cpu_easy' ? 'easy' : cfg.type === 'cpu_hard' ? 'hard' : 'normal',
+        color: PLAYER_COLORS[slot % 4],
+        avatar: cfg.avatar || PLAYER_AVATARS[slot % 4],
+        stationId: 'tokyo',
+        money: 1000,
+        cards: [KT.getCardById('kyuko'), KT.getCardById('special')].filter(Boolean),
+        ushipoTurns: 0,
+        sealedTurns: 0,
+        goalCount: 0
+      };
+    });
 
     state = {
       year: 1,
@@ -200,7 +228,8 @@ window.KT = window.KT || {};
     KT.mapRenderer.focusOnStation('tokyo', 0.92, true);
     updateAllUI();
 
-    const firstGoal = await KT.dialogs.showDestinationRouletteModal('tokyo', false);
+    const hasAnyHuman = players.some(p => !p.isCpu);
+    const firstGoal = await KT.dialogs.showDestinationRouletteModal('tokyo', !hasAnyHuman);
     state.goalStationId = firstGoal.id;
     updateAllUI();
     KT.mapRenderer.focusOnStation(firstGoal.id, 0.88);
@@ -240,6 +269,15 @@ window.KT = window.KT || {};
       await delay(480);
       await executeCpuTurn(player);
     } else {
+      // 人間が2人以上いるマルチプレイヤー対戦の場合、交代告知モーダルを表示！
+      const humanCount = state.players.filter(p => !p.isCpu).length;
+      if (humanCount >= 2) {
+        KT.audio.SE.card();
+        const pSlotIdx = player.slotIndex !== undefined ? player.slotIndex : (player.id !== undefined ? player.id : state.currentPlayerIndex);
+        await KT.dialogs.showTurnNoticeModal(player, pSlotIdx, goalSt, dist);
+        updateAllUI();
+      }
+
       isCommandPhase = true;
       if (cmdBar) cmdBar.classList.remove('hidden');
     }
@@ -381,7 +419,7 @@ window.KT = window.KT || {};
       updateAllUI();
       await KT.dialogs.showEventModal({
         title: '💴 一攫千金カード 大当たり！',
-        desc: `キラキラの臨時収入 <strong>${KT.formatMoney(bonus, false)}</strong> を手に入れました！`,
+        desc: `キラキラの臨時収入 <strong>${KT.formatMoney(bonus, true)}</strong> を手に入れました！`,
         charType: player.avatar,
         mood: 'happy',
         headerClass: 'gold',
@@ -427,7 +465,7 @@ window.KT = window.KT || {};
         player.money += gift;
         await KT.dialogs.showEventModal({
           title: `${card.icon} ${card.name} ボーナス！`,
-          desc: `特別おこづかい <strong>${KT.formatMoney(gift, false)}</strong> をもらいました！`,
+          desc: `特別おこづかい <strong>${KT.formatMoney(gift, true)}</strong> をもらいました！`,
           charType: player.avatar,
           mood: 'happy',
           autoCloseMs: player.isCpu ? 1000 : null
@@ -932,7 +970,7 @@ window.KT = window.KT || {};
 
       await KT.dialogs.showEventModal({
         title: `🎊 祝・【${station.pref}】${station.name}駅 一番乗り到着！！`,
-        desc: `おめでとうございます！！ <strong>${player.name}</strong> が 目的地「${station.name}駅」に 一番乗りで 到着しました！<br>援助金 <strong>＋${KT.formatMoney(aidMoney, false)}</strong> が プレゼントされます！<br><br>🦆 そして…目的地から いちばん 遠かった <strong>${farthestPlayer.name}</strong>（あと${maxDist}マス）に「ポンコツびんぼう神」が 取り憑きました！`,
+        desc: `おめでとうございます！！ <strong>${player.name}</strong> が 目的地「${station.name}駅」に 一番乗りで 到着しました！<br>援助金 <strong>＋${KT.formatMoney(aidMoney, true)}</strong> が プレゼントされます！<br><br>🦆 そして…目的地から いちばん 遠かった <strong>${farthestPlayer.name}</strong>（あと${maxDist}マス）に「ポンコツびんぼう神」が 取り憑きました！`,
         charType: player.avatar,
         mood: 'happy',
         headerClass: 'gold',
@@ -962,14 +1000,14 @@ window.KT = window.KT || {};
       const mult = state.year * (isSummer ? 1.5 : 1);
       const items = [100, 200, 350, 500, 800].map(v => {
         const amount = Math.round(v * mult);
-        return { amount, label: `＋${KT.formatMoney(amount, false)}` };
+        return { amount, label: `＋${KT.formatMoney(amount, true)}` };
       });
 
       if (player.isCpu) {
         const pick = items[Math.floor(Math.random() * items.length)];
         player.money += pick.amount;
         KT.audio.SE.coin();
-        setMessage(`🔵 ${player.name} は プラス駅で ＋${KT.formatMoney(pick.amount, false)} をゲット！`, player.avatar, 'happy');
+        setMessage(`🔵 ${player.name} は プラス駅で ＋${KT.formatMoney(pick.amount, true)} をゲット！`, player.avatar, 'happy');
         updateAllUI();
         await delay(500);
       } else {
@@ -989,14 +1027,14 @@ window.KT = window.KT || {};
       const mult = state.year * (isWinter ? 1.4 : 1);
       const items = [80, 150, 250, 400].map(v => {
         const amount = Math.round(v * mult);
-        return { amount, label: `▲${KT.formatMoney(amount, false)}` };
+        return { amount, label: `▲${KT.formatMoney(amount, true)}` };
       });
 
       if (player.isCpu) {
         const pick = items[Math.floor(Math.random() * items.length)];
         player.money -= pick.amount;
         KT.audio.SE.minus();
-        setMessage(`🔴 ${player.name} は マイナス駅で ▲${KT.formatMoney(pick.amount, false)} 減ってしまった…`, player.avatar, 'sad');
+        setMessage(`🔴 ${player.name} は マイナス駅で ▲${KT.formatMoney(pick.amount, true)} 減ってしまった…`, player.avatar, 'sad');
         updateAllUI();
         await delay(500);
       } else {
@@ -1085,7 +1123,7 @@ window.KT = window.KT || {};
       sample.owner.money += fee;
       KT.audio.SE.coin();
       setMessage(
-        `🎡 ${player.name} は ${sample.owner.name} の「${sample.prop.name}」で遊び、入園料 ${KT.formatMoney(fee, false)} を支払いました！`,
+        `🎡 ${player.name} は ${sample.owner.name} の「${sample.prop.name}」で遊び、入園料 ${KT.formatMoney(fee, true)} を支払いました！`,
         player.avatar,
         'happy'
       );
@@ -1131,7 +1169,7 @@ window.KT = window.KT || {};
         updateAllUI();
         await KT.dialogs.showEventModal({
           title: '🐱 怪盗ニャンコ仮面 参上ニャー！',
-          desc: `「おこづかい <strong>${KT.formatMoney(stolen, false)}</strong> は いただくニャ〜♪ 代わりに ネコのヒゲを 置いていくニャ！」`,
+          desc: `「おこづかい <strong>${KT.formatMoney(stolen, true)}</strong> は いただくニャ〜♪ 代わりに ネコのヒゲを 置いていくニャ！」`,
           charType: 'nyanko',
           mood: 'happy',
           headerClass: 'purple'
@@ -1147,7 +1185,7 @@ window.KT = window.KT || {};
       updateAllUI();
       await KT.dialogs.showEventModal({
         title: ev.title,
-        desc: `${ev.goodDesc}<br>（＋<strong>${KT.formatMoney(gift, false)}</strong> ＆ 🚃きゅうこうカード！）`,
+        desc: `${ev.goodDesc}<br>（＋<strong>${KT.formatMoney(gift, true)}</strong> ＆ 🚃きゅうこうカード！）`,
         charType: ev.svgType,
         mood: 'happy',
         headerClass: 'gold'
@@ -1217,7 +1255,7 @@ window.KT = window.KT || {};
       const milkCost = 20 * state.year;
       player.money -= milkCost;
       updateAllUI();
-      setMessage(`🍼 ちびポコ神のおやつタイムで ${player.name} のお金が ${KT.formatMoney(milkCost, false)} 減りました♪`, 'chibi', 'happy');
+      setMessage(`🍼 ちびポコ神のおやつタイムで ${player.name} のお金が ${KT.formatMoney(milkCost, true)} 減りました♪`, 'chibi', 'happy');
       await delay(500);
       return;
     }
@@ -1246,7 +1284,7 @@ window.KT = window.KT || {};
       updateAllUI();
       await KT.dialogs.showEventModal({
         title: '⚡ 大魔王ドカン神の雷撃！！',
-        desc: `${player.name} の持ち金から <strong>▲${KT.formatMoney(loss, false)}</strong> が吹き飛ばされた！！`,
+        desc: `${player.name} の持ち金から <strong>▲${KT.formatMoney(loss, true)}</strong> が吹き飛ばされた！！`,
         charType: 'king',
         mood: 'shock',
         headerClass: 'purple',
@@ -1269,7 +1307,7 @@ window.KT = window.KT || {};
         updateAllUI();
         await KT.dialogs.showEventModal({
           title: '⭕ 大正解なのら〜！！',
-          desc: `「すごいのら！ごほうびに <strong>＋${KT.formatMoney(prize, false)}</strong> をあげるのら〜♪」`,
+          desc: `「すごいのら！ごほうびに <strong>＋${KT.formatMoney(prize, true)}</strong> をあげるのら〜♪」`,
           charType: 'binbo',
           mood: 'happy',
           headerClass: 'gold'
@@ -1280,7 +1318,7 @@ window.KT = window.KT || {};
         updateAllUI();
         await KT.dialogs.showEventModal({
           title: '❌ ざんねん！ハズレなのら〜！',
-          desc: `「おやつ代 <strong>▲${KT.formatMoney(loss, false)}</strong> をもらっちゃうのら〜♪」`,
+          desc: `「おやつ代 <strong>▲${KT.formatMoney(loss, true)}</strong> をもらっちゃうのら〜♪」`,
           charType: 'binbo',
           mood: 'normal'
         });
@@ -1292,12 +1330,12 @@ window.KT = window.KT || {};
     player.money -= loss;
     updateAllUI();
     if (player.isCpu) {
-      setMessage(`🦆 ポンコツびんぼう神のいたずらで ${player.name} は ▲${KT.formatMoney(loss, false)} 減ってしまった！`, 'binbo', 'happy');
+      setMessage(`🦆 ポンコツびんぼう神のいたずらで ${player.name} は ▲${KT.formatMoney(loss, true)} 減ってしまった！`, 'binbo', 'happy');
       await delay(550);
     } else {
       await KT.dialogs.showEventModal({
         title: act.title,
-        desc: `${act.desc}<br>（<strong>▲${KT.formatMoney(loss, false)}</strong> 減ってしまいました）`,
+        desc: `${act.desc}<br>（<strong>▲${KT.formatMoney(loss, true)}</strong> 減ってしまいました）`,
         charType: 'binbo',
         mood: 'normal'
       });
@@ -1322,7 +1360,7 @@ window.KT = window.KT || {};
           updateAllUI();
           await KT.dialogs.showEventModal({
             title: ev.title,
-            desc: `${ev.desc}<br><br>🎊 オーナーの <strong>${owner.name}</strong> に 特別臨時ボーナス <strong>＋${KT.formatMoney(bonus, false)}</strong>！`,
+            desc: `${ev.desc}<br><br>🎊 オーナーの <strong>${owner.name}</strong> に 特別臨時ボーナス <strong>＋${KT.formatMoney(bonus, true)}</strong>！`,
             charType: owner.avatar,
             mood: 'happy',
             headerClass: 'gold',
@@ -1373,13 +1411,13 @@ window.KT = window.KT || {};
         </div>
         <div style="text-align:right;">
           <div style="font-size:0.85rem; color:#546e7a;">目的地到着：${item.player.goalCount || 0}回</div>
-          <div style="font-size:1.25rem; color:#d50000;">総資産：${KT.formatMoney(item.totalAssets, false)}</div>
+          <div style="font-size:1.25rem; color:#d50000;">総資産：${KT.formatMoney(item.totalAssets, true)}</div>
         </div>
       </div>
     `).join('');
 
     KT.dialogs.openModal(`
-      <div class="celebration-banner">🏆 祝・全${state.maxYears}年 グランドフィナーレ 表彰式！！ 🎊</div>
+      <div class="celebration-banner">${KT.ruby(`🏆 祝・全${state.maxYears}年 グランドフィナーレ 表彰式！！`)} 🎊</div>
       <div style="margin:10px 0;">
         ${KT.svg.getCharacterSVG(winner.player.avatar, 'happy', 105)}
         <h2 style="color:#d50000; font-size:1.6rem; margin-top:6px;">
@@ -1412,7 +1450,7 @@ window.KT = window.KT || {};
 
       const stations = KT.PROPERTY_STATIONS.filter(s => s.region === selectedRegion);
       const listHtml = stations.map(st => {
-        const propsText = (st.properties || []).map(p => `${p.icon}${p.name}（${KT.formatMoney(p.price, false)}）`).join(' ／ ');
+        const propsText = (st.properties || []).map(p => `${p.icon}${p.name}（${KT.formatMoney(p.price, true)}）`).join(' ／ ');
         return `
           <div class="prop-item" style="cursor:pointer;" data-jump-st="${st.id}">
             <div style="flex:1;">
@@ -1425,7 +1463,7 @@ window.KT = window.KT || {};
       }).join('');
 
       KT.dialogs.openModal(`
-        <div class="modal-header blue">🗾 全国47都道府県 わくわくアトラクション＆名産品図鑑</div>
+        <div class="modal-header blue">${KT.ruby('🗾 全国47都道府県 わくわくアトラクション＆名産品図鑑')}</div>
         <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:10px;">
           ${tabsHtml}
         </div>
@@ -1483,15 +1521,15 @@ window.KT = window.KT || {};
           </div>
         </div>
         <div style="text-align:right; font-weight:900;">
-          <div>持ち金：${KT.formatMoney(item.player.money, false)}</div>
-          <div style="color:#2e7d32;">年間収益：＋${KT.formatMoney(item.revenue, false)}</div>
-          <div style="color:#d50000; font-size:1.15rem;">総資産：${KT.formatMoney(item.totalAssets, false)}</div>
+          <div>持ち金：${KT.formatMoney(item.player.money, true)}</div>
+          <div style="color:#2e7d32;">年間収益：＋${KT.formatMoney(item.revenue, true)}</div>
+          <div style="color:#d50000; font-size:1.15rem;">総資産：${KT.formatMoney(item.totalAssets, true)}</div>
         </div>
       </div>
     `).join('');
 
     KT.dialogs.openModal(`
-      <div class="modal-header gold">📊 社長たちの 会社情報・総資産ランキング</div>
+      <div class="modal-header gold">${KT.ruby('📊 社長たちの 会社情報・総資産ランキング')}</div>
       <div class="prop-list">${rowsHtml}</div>
       <button id="comp-close-btn" class="btn-jumbo btn-start" style="padding:8px 32px; margin-top:8px;">
         とじる
@@ -1503,6 +1541,13 @@ window.KT = window.KT || {};
       KT.dialogs.closeModal();
     });
   }
+
+  const DEFAULT_HUMAN_NAMES = ['きんたろう社長', 'うらしま社長', 'かぐや姫社長', 'いっすん社長'];
+  const ALL_KNOWN_NAMES = [
+    'きんたろう社長', 'うらしま社長', 'かぐや姫社長', 'いっすん社長',
+    'まめオニ社長', 'あかオニ社長', 'メカオニ社長',
+    '1P社長', '2P社長', '3P社長', '4P社長'
+  ];
 
   function initApp() {
     const titleCharsEl = document.getElementById('title-chars-preview');
@@ -1517,6 +1562,132 @@ window.KT = window.KT || {};
 
     document.querySelectorAll('[data-ruby]').forEach(el => {
       el.innerHTML = KT.ruby(el.innerHTML);
+    });
+
+    // プレイヤー設定スロットのプレビュー＆状態の更新
+    function updateSetupSlot(slotIdx) {
+      const typeSel = document.getElementById(`p-type-${slotIdx}`);
+      const nameInp = document.getElementById(`p-name-${slotIdx}`);
+      const box = document.querySelector(`.player-setup-box[data-slot="${slotIdx}"]`);
+      const previewEl = document.getElementById(`p-avatar-preview-${slotIdx}`);
+      if (!typeSel || !nameInp || !box) return;
+
+      const type = typeSel.value;
+      if (type === 'none') {
+        box.classList.add('slot-disabled');
+        nameInp.disabled = true;
+        if (previewEl) previewEl.innerHTML = '<span style="font-size:1.6rem; opacity:0.35;">❌</span>';
+      } else {
+        box.classList.remove('slot-disabled');
+        nameInp.disabled = false;
+        const avatarMap = {
+          human: PLAYER_AVATARS[slotIdx],
+          cpu_easy: 'mame_oni',
+          cpu_normal: 'aka_oni',
+          cpu_hard: 'mecha_oni'
+        };
+        const avatarKey = avatarMap[type] || PLAYER_AVATARS[slotIdx];
+        if (previewEl) {
+          previewEl.innerHTML = KT.svg.getCharacterSVG(avatarKey, 'happy', 56);
+        }
+      }
+    }
+
+    // 選択中の人数に応じたプリセットボタンのハイライト同期
+    function syncCountPresetButtons() {
+      let humanCount = 0;
+      for (let i = 0; i < 4; i++) {
+        const typeSel = document.getElementById(`p-type-${i}`);
+        if (typeSel && typeSel.value === 'human') humanCount++;
+      }
+      document.querySelectorAll('.btn-count-preset').forEach(btn => {
+        const count = Number(btn.getAttribute('data-humans'));
+        if (count === humanCount) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // 各スロットの初期描画＆changeイベント設定
+    for (let i = 0; i < 4; i++) {
+      const typeSel = document.getElementById(`p-type-${i}`);
+      const nameInp = document.getElementById(`p-name-${i}`);
+      if (typeSel && nameInp) {
+        updateSetupSlot(i);
+
+        typeSel.addEventListener('change', () => {
+          const newType = typeSel.value;
+          const curVal = nameInp.value.trim();
+
+          // 名前が未入力、または既知のデフォルト名のいずれかであれば、新タイプに応じた名前に自動更新
+          if (!curVal || ALL_KNOWN_NAMES.includes(curVal)) {
+            if (newType === 'human') {
+              nameInp.value = DEFAULT_HUMAN_NAMES[i];
+            } else if (newType === 'cpu_easy') {
+              nameInp.value = 'まめオニ社長';
+            } else if (newType === 'cpu_normal') {
+              nameInp.value = 'あかオニ社長';
+            } else if (newType === 'cpu_hard') {
+              nameInp.value = 'メカオニ社長';
+            }
+          }
+
+          updateSetupSlot(i);
+          syncCountPresetButtons();
+        });
+      }
+    }
+
+    // 「にんげんで遊ぶ人数」クイック選択プリセットボタン
+    document.querySelectorAll('.btn-count-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const humans = Number(btn.getAttribute('data-humans')) || 1;
+        KT.audio.SE.click();
+
+        // 人数プリセットの適用
+        // 1人: 1P人間, 2P CPUやさしい, 3P CPUふつう, 4P 不参加
+        // 2人: 1P人間, 2P人間, 3P CPUやさしい, 4P 不参加
+        // 3人: 1P人間, 2P人間, 3P人間, 4P CPUやさしい
+        // 4人: 1P人間, 2P人間, 3P人間, 4P人間
+        const configs = {
+          1: [
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[0] },
+            { type: 'cpu_easy', name: 'まめオニ社長' },
+            { type: 'cpu_normal', name: 'あかオニ社長' },
+            { type: 'none', name: 'メカオニ社長' }
+          ],
+          2: [
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[0] },
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[1] },
+            { type: 'cpu_easy', name: 'まめオニ社長' },
+            { type: 'none', name: 'メカオニ社長' }
+          ],
+          3: [
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[0] },
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[1] },
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[2] },
+            { type: 'cpu_easy', name: 'まめオニ社長' }
+          ],
+          4: [
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[0] },
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[1] },
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[2] },
+            { type: 'human', name: DEFAULT_HUMAN_NAMES[3] }
+          ]
+        }[humans] || configs[1];
+
+        configs.forEach((cfg, idx) => {
+          const sel = document.getElementById(`p-type-${idx}`);
+          const inp = document.getElementById(`p-name-${idx}`);
+          if (sel) sel.value = cfg.type;
+          if (inp) inp.value = cfg.name;
+          updateSetupSlot(idx);
+        });
+
+        syncCountPresetButtons();
+      });
     });
 
     const contBtn = document.getElementById('btn-continue-game');
@@ -1562,15 +1733,28 @@ window.KT = window.KT || {};
           cpu_normal: 'aka_oni',
           cpu_hard: 'mecha_oni'
         };
+        const defaultName = type === 'human'
+          ? (DEFAULT_HUMAN_NAMES[i] || `${i + 1}P社長`)
+          : (type === 'cpu_easy' ? 'まめオニ社長' : type === 'cpu_hard' ? 'メカオニ社長' : 'あかオニ社長');
+
         playersConfig.push({
-          name: nameInp && nameInp.value.trim() ? nameInp.value.trim() : `${i + 1}P社長`,
+          slotIndex: i,
+          name: nameInp && nameInp.value.trim() ? nameInp.value.trim() : defaultName,
           type,
           avatar: avatarMap[type] || PLAYER_AVATARS[i]
         });
       }
+
+      // 最低2人は必要（1人のみの場合はCPUを1人追加）
       if (playersConfig.length < 2) {
-        playersConfig.push({ name: 'まめオニ社長', type: 'cpu_easy', avatar: 'mame_oni' });
+        playersConfig.push({
+          slotIndex: 1,
+          name: 'まめオニ社長',
+          type: 'cpu_easy',
+          avatar: 'mame_oni'
+        });
       }
+
       const yearsSel = document.getElementById('setup-years');
       const maxYears = yearsSel ? Number(yearsSel.value) : 3;
       startNewGame(playersConfig, maxYears);

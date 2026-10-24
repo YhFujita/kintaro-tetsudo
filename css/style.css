@@ -124,6 +124,59 @@ body.hide-ruby ruby rt {
   margin-top: 6px;
 }
 
+.human-count-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fff8e1;
+  border: 3px solid #ffb300;
+  border-radius: 16px;
+  padding: 8px 16px;
+  margin: 10px 0 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.count-selector-label {
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: #d84315;
+}
+
+.count-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-count-preset {
+  background: #ffffff;
+  border: 2.5px solid #546e7a;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: #37474f;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 0 #78909c;
+}
+
+.btn-count-preset:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.btn-count-preset.active {
+  background: linear-gradient(180deg, #ff5252 0%, #d50000 100%);
+  color: #ffffff;
+  border-color: #b71c1c;
+  box-shadow: 0 3px 0 #7f0000, 0 0 10px rgba(213,0,0,0.35);
+  transform: translateY(1px);
+}
+
 .setup-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -140,6 +193,27 @@ body.hide-ruby ruby rt {
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.player-setup-box.slot-disabled {
+  opacity: 0.55;
+  filter: grayscale(0.85);
+}
+
+.player-avatar-preview {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0;
+  transition: transform 0.2s ease;
+}
+
+.player-avatar-preview svg {
+  width: 100%;
+  height: 100%;
 }
 
 .player-setup-box[data-slot="0"] { border-color: #e53935; background: #ffebee; }
@@ -661,13 +735,46 @@ body.moving-phase .bottom-hud {
 
 #command-bar {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
 }
 
 #command-bar.hidden {
   display: none;
+}
+
+.cmd-turn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 18px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: #ffffff;
+  background: #d50000;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+  animation: turnBadgePulse 1.6s infinite alternate ease-in-out;
+}
+
+@keyframes turnBadgePulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.04); filter: brightness(1.12); }
+}
+
+.cmd-turn-badge.p-red { background: linear-gradient(90deg, #d50000, #ff5252); border-color: #ffebee; }
+.cmd-turn-badge.p-blue { background: linear-gradient(90deg, #1565c0, #42a5f5); border-color: #e3f2fd; }
+.cmd-turn-badge.p-yellow { background: linear-gradient(90deg, #f57f17, #fbc02d); color: #212121; border-color: #fffde7; }
+.cmd-turn-badge.p-green { background: linear-gradient(90deg, #2e7d32, #66bb6a); border-color: #e8f5e9; }
+
+.cmd-buttons-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .cmd-btn {
@@ -1611,4 +1718,58 @@ body.moving-phase .bottom-hud {
     padding: 3px 10px;
     gap: 3px;
   }
+}
+
+/* ==================== 人間マルチプレイ交代モーダル ==================== */
+.turn-notice-card {
+  text-align: center;
+  padding: 10px 6px;
+}
+
+.turn-notice-banner {
+  font-size: 1.45rem;
+  font-weight: 900;
+  padding: 10px 20px;
+  border-radius: 999px;
+  color: #fff;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.turn-notice-banner.p-red { background: linear-gradient(90deg, #d50000, #ff5252); }
+.turn-notice-banner.p-blue { background: linear-gradient(90deg, #1565c0, #42a5f5); }
+.turn-notice-banner.p-yellow { background: linear-gradient(90deg, #f57f17, #fbc02d); color: #212121; }
+.turn-notice-banner.p-green { background: linear-gradient(90deg, #2e7d32, #66bb6a); }
+
+.turn-notice-avatar {
+  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.turn-notice-instruction {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #263238;
+  background: #fff8e1;
+  border: 3px solid #ffb300;
+  border-radius: 16px;
+  padding: 12px 20px;
+  margin: 14px auto;
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+.turn-notice-status-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-weight: 900;
+  font-size: 1.05rem;
+  margin-bottom: 16px;
+  color: #37474f;
+  flex-wrap: wrap;
 }

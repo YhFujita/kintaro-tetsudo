@@ -43,14 +43,18 @@ html, body {
 /* フリガナ（ルビ）が行間を崩さない綺麗設計 */
 ruby {
   ruby-align: center;
-  line-height: 1.55;
+  display: inline-ruby;
+  white-space: nowrap;
+  line-height: 1.45;
 }
 
 ruby rt {
-  font-size: 0.58em;
+  font-size: 0.52em;
   font-weight: 800;
   color: #b71c1c;
+  line-height: 1;
   letter-spacing: 0;
+  user-select: none;
 }
 
 .modal-header ruby rt,
@@ -251,7 +255,16 @@ body.hide-ruby ruby rt {
   font-size: 1.05rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.setup-options-row .setup-label-text {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .setup-options-row select {
@@ -260,6 +273,7 @@ body.hide-ruby ruby rt {
   font-weight: 900;
   border-radius: 10px;
   border: 2px solid var(--border-dark);
+  max-width: 100%;
 }
 
 .title-actions {
